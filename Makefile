@@ -12,7 +12,9 @@ run: build
 ifndef IAS_TOKEN
 	$(error IAS_TOKEN is not defined)
 endif
-	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/home/$$USER/.cargo/registry/ --device /dev/isgx --device /dev/mei0 --name $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)
+
+	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --device /dev/isgx --device /dev/mei0 --name $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_sgx
+
 
 sgx: run
 
@@ -22,26 +24,27 @@ development: build
 ifndef IAS_TOKEN
 	$(error IAS_TOKEN is not defined)
 endif
-	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -v /lib/modules:/lib/modules -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/home/$$USER/.cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)
+
+	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -v /lib/modules:/lib/modules -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_sgx
+
 
 # This macos is used for run test on trustzone either on MacOS or Linux. Please install XQuartz on MacOS or xhost on Linux. 
 .PHONY:
 tz: build
 ifeq ($(OS_NAME),darwin)
-	xhost + $(IP)
-	docker run --privileged -e DISPLAY=$(IP):0 -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/home/$$USER/.cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)
+	docker run --privileged -e DISPLAY=$(IP):0 -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
 else # otherwise linux
-	xhost +local:$(USER)
-	docker run --privileged -e DISPLAY=${DISPLAY} -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/home/$$USER/.cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)
+	docker run --privileged -e DISPLAY=${DISPLAY} -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
 endif
 
 .PHONY:
 build: Dockerfile
-	docker build --build-arg USER=$(USER) --build-arg UID=$(UID) -t $(VERACRUZ_DOCKER_IMAGE) -f $< .
+	DOCKER_BUILDKIT=1 docker build --squash --build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$(TEE) -t $(VERACRUZ_DOCKER_IMAGE)_$(TEE) -f $< .
 
 .PHONY:
 ci: Dockerfile.ci
-	docker build --build-arg USER=root --build-arg UID=0 -t $(VERACRUZ_DOCKER_IMAGE) -f $<  .
+	DOCKER_BUILDKIT=1 docker build --squash --build-arg USER=root --build-arg UID=0 --build-arg TEE=sgx -t $(VERACRUZ_DOCKER_IMAGE)_sgx -f $<  .
+	DOCKER_BUILDKIT=1 docker build --squash --build-arg USER=root --build-arg UID=0 --build-arg TEE=tz -t $(VERACRUZ_DOCKER_IMAGE)_tz -f $<  .
 
 Dockerfile.ci: Dockerfile
 	sed '/ENTRYPOINT/d' $< | tee $@
