@@ -315,7 +315,7 @@ RUN ./cleanup.sh
 FROM build_${TEE} as final
 
 WORKDIR /work
-COPY start_aesm.sh .
+COPY --chown=$USER start_aesm.sh .
 # NOTE: The image used in CI should run start_aesm.sh in the gitlab-ci script.
 # Otherwise the gitlab runner may complaint.
 ENTRYPOINT ["bash", "start_aesm.sh"]
