@@ -3,7 +3,7 @@ VERACRUZ_CONTAINER ?= veracruz
 VERACRUZ_ROOT ?= $(HOME)/git/veracruz
 USER := $(shell id -un)
 UID := $(shell id -u)
-IP := $(shell ifconfig en0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' )
+IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
 OS_NAME := $(shell uname -s | tr A-Z a-z)
 
 .PHONY:
