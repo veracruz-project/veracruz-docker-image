@@ -31,3 +31,5 @@ make build TEE=sgx
 ```sh
 make build TEE=tz
 ```
+
+To run Veracruz: [instructions](https://github.com/veracruz-project/veracruz/blob/main/BUILD_INSTRUCTIONS.markdown).

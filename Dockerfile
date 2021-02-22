@@ -121,7 +121,6 @@ SHELL ["/bin/bash", "-c"]
 # add the arm64 source
 COPY patch/sources.list /etc/apt/ 
 COPY cleanup.sh /cleanup.sh
-RUN chmod u+x /cleanup.sh
 RUN dpkg --add-architecture arm64
 
 RUN apt-get update && apt-get install --no-install-recommends -y \

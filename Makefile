@@ -1,6 +1,6 @@
 VERACRUZ_DOCKER_IMAGE ?= veracruz_image
 VERACRUZ_CONTAINER ?= veracruz
-VERACRUZ_ROOT ?= $(HOME)/git/veracruz
+VERACRUZ_ROOT ?= ..
 USER := $(shell id -un)
 UID := $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
@@ -13,7 +13,7 @@ ifndef IAS_TOKEN
 	$(error IAS_TOKEN is not defined)
 endif
 
-	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --device /dev/isgx --device /dev/mei0 --name $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_sgx
+	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --device /dev/isgx --device /dev/mei0 --name $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_sgx
 
 
 sgx: run
@@ -25,16 +25,16 @@ ifndef IAS_TOKEN
 	$(error IAS_TOKEN is not defined)
 endif
 
-	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -v /lib/modules:/lib/modules -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_sgx
+	docker run --privileged --cap-add=ALL -e IAS_TOKEN=${IAS_TOKEN} -v /lib/modules:/lib/modules -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_sgx
 
 
 # This macos is used for run test on trustzone either on MacOS or Linux. Please install XQuartz on MacOS or xhost on Linux. 
 .PHONY:
 tz: build
 ifeq ($(OS_NAME),darwin)
-	docker run --privileged -e DISPLAY=$(IP):0 -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
+	docker run --privileged -e DISPLAY=$(IP):0 -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
 else # otherwise linux
-	docker run --privileged -e DISPLAY=${DISPLAY} -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
+	docker run --privileged -e DISPLAY=${DISPLAY} -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
 endif
 
 .PHONY:
