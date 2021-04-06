@@ -95,7 +95,7 @@ ifeq ($(PLATFORM_FLAVOR),qemu_armv8a)
 CFG_TEE_CORE_NB_CORE = 4
 # [0e00.0000 0e0f.ffff] is reserved to early boot
 CFG_TZDRAM_START ?= 0x0e100000
-# The TZDRAM_SIZE is limited by the qemu/hw/arm/***REMOVED*** file, VIRT_SECURE_MEM value.
+# The TZDRAM_SIZE is limited by the qemu/hw/arm/virt.c file, VIRT_SECURE_MEM value.
 CFG_TZDRAM_SIZE  ?= 0x01e00000
 # SHM chosen arbitrary, in a way that it does not interfere
 # with initial location of linux kernel, dtb and initrd.

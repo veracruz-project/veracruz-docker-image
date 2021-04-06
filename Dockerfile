@@ -264,7 +264,6 @@ COPY patch/core_mmu_lpae.c /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/opt
 COPY patch/build_optee.sh patch/qemu_v8.mk /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/build/
 COPY patch/environment /work/rust-optee-trustzone-sdk/
 COPY patch/pgt_cache.h /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/optee_os/core/arch/arm/include/mm/
-COPY patch/***REMOVED*** /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/qemu/hw/arm/
 
 RUN make -j4 toolchains
 
