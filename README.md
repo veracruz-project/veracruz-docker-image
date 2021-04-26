@@ -1,5 +1,13 @@
 # Building Veracruz
 
+<img src = "https://confidentialcomputing.io/wp-content/uploads/sites/85/2019/08/cc_consortium-color.svg" width=192>
+
+This is the repository for the Docker container used for developing Veracruz.
+Veracruz is an open-source runtime for collaborative privacy-preserving compute.
+The main Veracruz repository can be found [here](https://github.com/veracruz-project/veracruz).
+
+Veracruz is an adopted project of the Confidential Compute Consortium (CCC).
+
 ## Supported platforms
 
 - Intel SGX
