@@ -310,10 +310,29 @@ RUN chown -R $USER /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/build/build
 WORKDIR /
 RUN ./cleanup.sh
 
+FROM build_sgx as build_icecap
+
+ARG USER
+ARG UID
+ENV DEBIAN_FRONTEND noninteractive
+SHELL ["/bin/bash", "-c"]
+
+USER root
+RUN apt-get update && apt-get install --no-install-recommends -y bc
+USER $USER
+
+ENV PATH="/nix/env/bin:${PATH}"
+ENV MANPATH="/nix/env/share/man:${MANPATH}"
+ENV NIX_SSL_CERT_FILE=/nix/env/etc/ssl/certs/ca-bundle.crt
+
+# HACK for persistent git cache. $XDG_CACHE_HOME doesn't appear to be in use elsewhere.
+# TODO patch nix to use $NIX_CACHE_HACK instead
+ENV XDG_CACHE_HOME=/nix/cache
+
 FROM build_${TEE} as final
 
 WORKDIR /work
-COPY --chown=$USER start_aesm.sh .
-# NOTE: The image used in CI should run start_aesm.sh in the gitlab-ci script.
+COPY --chown=$USER entrypoint.sh .
+# NOTE: The image used in CI should run entrypoint.sh in the gitlab-ci script.
 # Otherwise the gitlab runner may complaint.
-ENTRYPOINT ["bash", "start_aesm.sh"]
+ENTRYPOINT ["bash", "entrypoint.sh"]
