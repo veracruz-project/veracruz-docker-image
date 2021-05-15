@@ -62,14 +62,23 @@ Note that building the Docker image will take a long time (we appreciate any sug
 
 - ### Build Instructions for SGX
     ```
-    make sgx TEE=sgx IAS_TOKEN=<your Intel Attestation Service token>
+    make build TEE=sgx 
     ```
 - ### Build Instructions for Arm TrustZone
     ```
-    make tz TEE=tz
+    make build TEE=tz
     ```
 
-Once the image build process has finished, there should be a Docker container running called "veracruz". To verify that it's running, run: 
+- ### Starting the veracruz container
+    ```
+    make sgx-run IAS_TOKEN=<your Intel Attestation Service token>
+    ```
+    or (for trustzone):
+    ```
+    make tz-run
+    ```
+
+There should be a Docker container running called "veracruz". To verify that it's running, run: 
     ```
     docker ps
     ```
@@ -87,11 +96,8 @@ You can manually build Veracruz by running:
 ```
 source /work/veracruz/sgx_env.sh
 
-cd /work/veracruz/runtime-manager/
-make
-
-cd /work/veracruz/veracruz-server/
-make
+cd /work/veracruz
+make sgx
 ```
 
 With that, all major sub-components of Veracruz (including the SDK) will be built for SGX.
