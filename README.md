@@ -47,7 +47,7 @@ Once all the necessary requirements are available, run the following commands:
 - Clone the Veracruz repository: This will pull the docker submodule
 
     ```
-    git clone --recursive git@github.com:veracruz-project/veracruz.git 
+    git clone --recursive https://github.com/veracruz-project/veracruz.git 
     export VERACRUZ_ROOT=$PWD/veracruz
     ```
 - Once you have a local copy of the Veracruz source:
