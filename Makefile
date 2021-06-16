@@ -6,6 +6,8 @@ UID := $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
 OS_NAME := $(shell uname -s | tr A-Z a-z)
 
+NIX_ROOT ?= ../icecap/nix-root
+
 .PHONY:
 # Assume an linux machine with sgx enable
 run: build
@@ -36,6 +38,11 @@ ifeq ($(OS_NAME),darwin)
 else # otherwise linux
 	docker run --privileged -e DISPLAY=${DISPLAY} -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_tz
 endif
+
+.PHONY:
+icecap: build
+	mkdir -p $(NIX_ROOT)
+	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(abspath $(NIX_ROOT)):/nix --name $(VERACRUZ_CONTAINER) $(VERACRUZ_DOCKER_IMAGE)_icecap
 
 .PHONY:
 build: Dockerfile
