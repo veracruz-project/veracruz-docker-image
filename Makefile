@@ -5,6 +5,7 @@ USER ?= $(shell id -un)
 UID ?= $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
 OS_NAME := $(shell uname -s | tr A-Z a-z)
+LOCALIP=$(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*')
 
 .PHONY:
 # Assume an linux machine with sgx enable
@@ -48,6 +49,14 @@ ci-exec:
 	docker exec -i -t $(VERACRUZ_CONTAINER)_ci_$(USER) /bin/bash
 
 .PHONY:
+nitro-run: nitro-base
+	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ -v /usr/bin:/host/bin -v /usr/share/nitro_enclaves:/usr/share/nitro_enclaves -v /run/nitro_enclaves:/run/nitro_enclaves -v /etc/nitro_enclaves:/etc/nitro_enclaves --device=/dev/vsock:/dev/vsock -v /var/run/docker.sock:/var/run/docker.sock --device=/dev/nitro_enclaves:/dev/nitro_enclaves --env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp --name $(VERACRUZ_CONTAINER)_nitro_$(USER) $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
+
+.PHONY:
+nitro-exec:
+	docker exec -u root -i -t $(VERACRUZ_CONTAINER)_nitro_$(USER) /bin/bash
+
+.PHONY:
 build: Dockerfile
 	DOCKER_BUILDKIT=1 docker build --build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$(TEE) -t $(VERACRUZ_DOCKER_IMAGE)_$(TEE):$(USER) -f $< .
 
@@ -62,6 +71,18 @@ sgx-base: sgx/Dockerfile base
 .PHONY:
 tz-base: tz/Dockerfile base
 	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=tz -t veracruz/tz-base -f $< .
+
+.PHONY:
+nitro-base: nitro/Dockerfile base
+ifneq (,$(wildcard aws-nitro-enclaves-cli))
+	cd "aws-nitro-enclaves-cli"
+	git pull origin main
+else
+	git clone https://github.com/aws/aws-nitro-enclaves-cli.git
+endif
+	make -C aws-nitro-enclaves-cli nitro-cli
+	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) -f $< .
+
 
 .PHONY:
 qemu-base: qemu/Dockerfile
