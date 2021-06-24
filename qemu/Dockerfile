@@ -98,5 +98,6 @@ COPY --from=build_qemu /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/out-br/
 COPY --from=build_qemu /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/out/bin/* /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/out/bin/
 COPY --from=build_qemu /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/qemu/aarch64-softmmu/qemu-* /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/qemu/aarch64-softmmu/
 COPY --from=build_qemu /work/rust-optee-trustzone-sdk/environment /work/rust-optee-trustzone-sdk/environment
+COPY --from=build_qemu /work/rust-optee-trustzone-sdk/optee-qemuv8-3.7.0/build/openssl-1.0.2s/lib/* /usr/lib/aarch64-linux-gnu 
 
 WORKDIR /work

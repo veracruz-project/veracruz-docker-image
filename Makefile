@@ -29,15 +29,23 @@ sgx-exec:
 # This macos is used for run test on trustzone either on MacOS or Linux. Please install XQuartz on MacOS or xhost on Linux. 
 .PHONY:
 tz-run:
-ifeq ($(OS_NAME),darwin)
-	docker run --rm --privileged -u $(UID) -e DISPLAY=$(IP):0 -d -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER)_tz_$(USER) $(VERACRUZ_DOCKER_IMAGE)_tz:$(USER) sleep inf
-else # otherwise linux
-	docker run --rm --privileged -u $(UID) -e DISPLAY=${DISPLAY} -d -v /work/cache:/cache -v /tmp/.X11-unix:/tmp/.X11-unix -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER)_tz_$(USER) $(VERACRUZ_DOCKER_IMAGE)_tz:$(USER) sleep inf
-endif
+	docker run --rm --privileged -u $(UID) -d -v /work/cache:/cache -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER)_tz_$(USER) $(VERACRUZ_DOCKER_IMAGE)_tz:$(USER) sleep inf
 
 .PHONY:
 tz-exec:
 	docker exec -i -t $(VERACRUZ_CONTAINER)_tz_$(USER) /bin/bash
+
+# Check if the CI image is good enough locally.
+.PHONY:
+ci-run:
+ifndef IAS_TOKEN
+	$(error IAS_TOKEN is not defined)
+endif
+	docker run --rm --privileged -u $(UID) -d -v /work/cache:/cache -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz  --device /dev/isgx --device /dev/mei0 --name $(VERACRUZ_CONTAINER)_ci_$(USER) $(VERACRUZ_DOCKER_IMAGE)_ci:$(USER) /bin/bash /work/start_aesm.sh
+
+.PHONY:
+ci-exec:
+	docker exec -i -t $(VERACRUZ_CONTAINER)_ci_$(USER) /bin/bash
 
 .PHONY:
 build: Dockerfile
@@ -64,11 +72,10 @@ all-base: base sgx-base tz-base qemu-base
 	echo 'All base docker images re-built from scratch'
 
 .PHONY:
+ci-base: ci/Dockerfile
+	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
+
+.PHONY:
 pull-base:
 	docker pull veracruz/sgx
 	docker pull veracruz/tz
-
-.PHONY:
-ci: Dockerfile
-	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=sgx -t $(VERACRUZ_DOCKER_IMAGE)_sgx -f $<  .
-	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=tz -t $(VERACRUZ_DOCKER_IMAGE)_tz -f $<  .
