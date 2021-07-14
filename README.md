@@ -84,9 +84,17 @@ There should be a Docker container running called "veracruz". To verify that it'
     ```
     
 You can now start a shell in the newly created container:
+    
+   For SGX:
 
 ```
-docker exec -u <your username> -it 'veracruz' bash
+docker exec -u <your username> -it 'veracruz_sgx_<your username>' bash
+```
+    
+   For trustzone:
+
+```
+docker exec -u <your username> -it 'veracruz_tz_<your username>' bash
 ```
 
 ## Test Instructions for SGX
