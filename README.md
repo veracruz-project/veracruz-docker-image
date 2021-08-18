@@ -69,6 +69,11 @@ Note that building the Docker image will take a long time (we appreciate any sug
     make build TEE=tz
     ```
 
+- ### Build Instructions for AWS Nitro Enclaves
+    ```
+    make build TEE=nitro
+    ```
+
 - ### Starting the veracruz container
     ```
     make sgx-run IAS_TOKEN=<your Intel Attestation Service token>
@@ -76,6 +81,10 @@ Note that building the Docker image will take a long time (we appreciate any sug
     or (for trustzone):
     ```
     make tz-run
+    ```
+    or (for AWS Nitro Enclaves):
+    ```
+    make nitro-run
     ```
 
 There should be a Docker container running called "veracruz". To verify that it's running, run: 
@@ -155,6 +164,61 @@ make trustzone-veracruz-test
 ```
 
 will execute both of these testsuites.  You, again, should see _7_ and _8_ tests executing and passing, respectively.
+
+## Test Instructions for AWS Nitro Enclaves
+
+Once inside the container, set up your local environment.
+
+You need to configure your AWS credentials by running:
+```
+aws configure
+```
+and entering the appropriate values at the prompt.
+
+Veracruz needs the ability to start another EC2 instance from your initial EC2 instance. The following instructions set up this ability.
+
+You need to get the subnet that your initial EC2 instance is on.
+
+The id of this subnet should be set in the environment varialbe AWS_SUBNET.
+
+You need to create a security group that allows ports 3010, 9090 for private IP addresses within the subnet.
+
+You probably also want to allow port 22 form all IPs to enable you to SSH into the instance (if you think you'll want to)
+
+The name of this security group should be set in the environment variable AWS_SECURITY_GROUP_ID
+
+You also need to set up an AWSK public/private key pair. You need the private key in a file on your initial EC2 instance. The path to this private key should be set in the environment variable AWS_PRIVATE_KEY_FILENAME.
+
+The name of this key pair (as known by AWS) should be set in the environment variable AWS_KEY_NAME.
+
+The AWS region that you are running on should be set in the environment variable AWS_REGION.
+
+To do this, it is recommended to set the variables in a file called nitro.env as follows:
+```bash
+export AWS_KEY_NAME="<VALUE>"
+export AWS_PRIVATE_KEY_FILENAME="<VALUE>"
+export AWS_SUBNET="<VALUE>"
+export AWS_REGION="<VALUE>"
+export AWS_SECURITY_GROUP_ID="<VALUE>"
+```
+Now, to run the tests:
+```
+make trustzone-veracruz-server-test
+```
+
+and
+
+```
+make trustzone-veracruz-test
+```
+
+***IMPORTANT***
+After the tests have run, you should make sure any extra EC2 instances have been
+shut down by running:
+```
+./veracruz-server-test/nitro-ec2-terminate-root.sh
+```
+or you might end up with some surprising AWS bills.
 
 # Cleaning a build
 
