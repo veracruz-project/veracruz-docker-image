@@ -6,7 +6,7 @@ UID ?= $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
 OS_NAME := $(shell uname -s | tr A-Z a-z)
 LOCALIP=$(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*')
-AWS_NITRO_CLI_REVISION = dff9102783959412dcf5d515e641c2c3ad0d443b
+AWS_NITRO_CLI_REVISION = 63f366053a074d3af1f9d40701c2342ed67a14e7
 
 .PHONY:
 # Assume an linux machine with sgx enable
