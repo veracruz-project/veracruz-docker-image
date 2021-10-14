@@ -28,7 +28,15 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     lxc \
     iptables \
     jq \
-    iproute2
+    iproute2 \
+    apt-transport-https \
+    gnupg \
+    lsb-release \
+    software-properties-common
+
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+RUN apt-get update && apt-get install --no-install-recommends -y docker-ce-cli
 
 COPY aws-nitro-enclaves-cli/build/nitro_cli/x86_64-unknown-linux-musl/release/nitro-cli /usr/bin/
 
@@ -51,7 +59,7 @@ RUN mkdir -p /var/log/nitro_enclaves/
 RUN touch /var/log/nitro_enclaves/nitro_enclaves.log
 
 RUN mkdir -p /usr/share/nitro_enclaves/blobs/
-RUN echo "reboot=k panic=30 pci=off nomodules console=ttyS0 i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd random.trust_cpu=on" > /usr/share/nitro_enclaves/blobs/cmdline
+COPY aws-nitro-enclaves-cli/blobs/x86_64/* /usr/share/nitro_enclaves/blobs
 
 # Define additional metadata for our image.
 VOLUME /var/lib/docker
