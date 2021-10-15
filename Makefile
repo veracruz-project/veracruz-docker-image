@@ -51,7 +51,19 @@ ci-exec:
 
 .PHONY:
 nitro-run: nitro-base
-	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ -v /usr/bin:/host/bin -v /usr/share/nitro_enclaves:/usr/share/nitro_enclaves -v /run/nitro_enclaves:/run/nitro_enclaves -v /etc/nitro_enclaves:/etc/nitro_enclaves --device=/dev/vsock:/dev/vsock -v /var/run/docker.sock:/var/run/docker.sock --device=/dev/nitro_enclaves:/dev/nitro_enclaves --env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp --name $(VERACRUZ_CONTAINER)_nitro_$(USER) $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
+	# This container must be started on a "Nitro Enclave"-capable AWS instance
+	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ \
+		-v /usr/bin:/host/bin -v /usr/share/nitro_enclaves:/usr/share/nitro_enclaves -v /run/nitro_enclaves:/run/nitro_enclaves \
+		-v /etc/nitro_enclaves:/etc/nitro_enclaves --device=/dev/vsock:/dev/vsock --device=/dev/nitro_enclaves:/dev/nitro_enclaves \
+		-v /var/run/docker.sock:/var/run/docker.sock --env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
+		--name $(VERACRUZ_CONTAINER)_nitro_$(USER) $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
+
+.PHONY:
+nitro-run-build: nitro-base
+	# This container does not need to be run in AWS it can build but not start enclaves
+	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ \
+	-v /var/run/docker.sock:/var/run/docker.sock --env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
+	--name $(VERACRUZ_CONTAINER)_nitro_$(USER) $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
 
 .PHONY:
 nitro-exec:
