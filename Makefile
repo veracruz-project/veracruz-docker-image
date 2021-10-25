@@ -52,8 +52,9 @@ ci-exec:
 
 
 .PHONY:
-nitro-container-image/created: nitro-container-image/Dockerfile ../proxy-attestation-server/target/debug/proxy-attestation-server ../veracruz-server/target/debug/veracruz-server ../veracruz-client/target/debug/veracruz-client ../runtime-manager/runtime_manager.eif ../test-collateral/proxy-attestation-server.db 
+nitro-container-image/created: nitro-container-image/Dockerfile ../proxy-attestation-server/target/debug/proxy-attestation-server ../veracruz-server/target/debug/veracruz-server ../veracruz-client/target/debug/veracruz-client ../runtime-manager/runtime_manager.eif ../test-collateral/proxy-attestation-server.db ../runtime-manager/PCR0
 	cp -u ../proxy-attestation-server/target/debug/proxy-attestation-server ../veracruz-server/target/debug/veracruz-server ../veracruz-client/target/debug/veracruz-client ../runtime-manager/runtime_manager.eif ../test-collateral/proxy-attestation-server.db nitro-container-image 
+	cut -c 1-64 < ../runtime-manager/PCR0 > nitro-container-image/hash
 	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t veracruz_container_nitro:$(USER)  -f $< .
 	touch nitro-container-image/created
 
