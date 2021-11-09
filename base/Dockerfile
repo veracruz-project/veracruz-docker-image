@@ -19,6 +19,7 @@ FROM ubuntu:18.04
 
 ARG USER=root
 ARG UID=0
+ARG ARCH=x86_64
 ENV DEBIAN_FRONTEND noninteractive
 # Use bash as the default
 SHELL ["/bin/bash", "-c"]
@@ -74,7 +75,11 @@ ARG protobuf_version=3.12.4
 ARG protobuf_dir=/usr/local/protobuf
 ARG protobuf_temp=/tmp/protobuf.zip
 ENV PATH "${protobuf_dir}/bin:${PATH}"
-RUN curl --location https://github.com/protocolbuffers/protobuf/releases/download/v${protobuf_version}/protoc-${protobuf_version}-linux-x86_64.zip > ${protobuf_temp} \
+RUN if [ ${ARCH} eq aarch64 ] ; then \
+	curl --location https://github.com/protocolbuffers/protobuf/releases/download/v${protobuf_version}/protoc-${protobuf_version}-linux-aarch_64.zip > ${protobuf_temp} ; \
+    else \
+	curl --location https://github.com/protocolbuffers/protobuf/releases/download/v${protobuf_version}/protoc-${protobuf_version}-linux-x86_64.zip > ${protobuf_temp} ; \
+    fi \
     && unzip ${protobuf_temp} -d ${protobuf_dir} \
     && rm ${protobuf_temp} \
     && chmod --recursive a+rwx ${protobuf_dir}
@@ -105,4 +110,4 @@ RUN set -eux; \
     cargo install xargo --force; \
     cargo install diesel_cli --no-default-features --features sqlite; \
     chown -R ${USER} $RUSTUP_HOME; \
-    chown -R ${USER} $CARGO_HOME; 
+    chown -R ${USER} $CARGO_HOME;
