@@ -137,7 +137,12 @@ All (_8_) tests should pass.
 
 ## Test Instructions for TrustZone
 
-Once inside the container, setup your local environment by executing the `tz_env.sh` shell script in the Veracruz repository root directory.
+Once inside the container, setup your local environment using the `tz_env.sh` shell script in the Veracruz repository root directory:
+
+```
+source tz_env.sh
+```
+
 Following that, the enclave binary may be built by executing the `trustzone` build target, again in the root directory of Veracruz:
 
 ```
