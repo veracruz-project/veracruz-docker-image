@@ -137,15 +137,8 @@ All (_8_) tests should pass.
 
 ## Test Instructions for TrustZone
 
-Once inside the container, setup your local environment:
-
-```
-cd /work/rust-optee-trustzone-sdk/
-source environment
-source $CARGO_HOME/env
-```
-
-Now that your environment is set up, build the enclave binary by executing the `trustzone` build target in the root directory of Veracruz:
+Once inside the container, setup your local environment by executing the `tz_env.sh` shell script in the Veracruz repository root directory.
+Following that, the enclave binary may be built by executing the `trustzone` build target, again in the root directory of Veracruz:
 
 ```
 make trustzone
