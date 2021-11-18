@@ -8,6 +8,14 @@ OS_NAME := $(shell uname -s | tr A-Z a-z)
 LOCALIP=$(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*')
 AWS_NITRO_CLI_REVISION = 63f366053a074d3af1f9d40701c2342ed67a14e7
 
+ifeq ($(shell uname -m),aarch64)
+ARCH = aarch64
+else
+ARCH = x86_64
+endif
+
+BUILD_ARCH = --build-arg ARCH=$(ARCH)
+
 .PHONY:
 # Assume an linux machine with sgx enable
 sgx-run:
@@ -71,11 +79,11 @@ nitro-exec:
 
 .PHONY:
 build: Dockerfile
-	DOCKER_BUILDKIT=1 docker build --build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$(TEE) -t $(VERACRUZ_DOCKER_IMAGE)_$(TEE):$(USER) -f $< .
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$(TEE) -t $(VERACRUZ_DOCKER_IMAGE)_$(TEE):$(USER) -f $< .
 
 .PHONY:
 base: base/Dockerfile
-	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 -t veracruz/base -f $< .
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 -t veracruz/base -f $< .
 
 .PHONY:
 sgx-base: sgx/Dockerfile base
@@ -92,8 +100,7 @@ ifeq (,$(wildcard aws-nitro-enclaves-cli))
 endif
 	cd "aws-nitro-enclaves-cli" && git checkout $(AWS_NITRO_CLI_REVISION)
 	make -C aws-nitro-enclaves-cli nitro-cli
-	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) -f $< .
-
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) -f $< .
 
 .PHONY:
 qemu-base: qemu/Dockerfile
@@ -105,7 +112,7 @@ all-base: base sgx-base tz-base qemu-base
 
 .PHONY:
 ci-base: ci/Dockerfile
-	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
 
 .PHONY:
 pull-base:

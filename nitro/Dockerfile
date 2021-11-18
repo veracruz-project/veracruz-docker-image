@@ -15,6 +15,7 @@
 FROM veracruz/base:latest
 ARG USER=root
 ARG UID=0
+ARG ARCH=x86_64
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -35,10 +36,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     software-properties-common
 
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+RUN add-apt-repository "deb https://download.docker.com/linux/ubuntu bionic stable"
 RUN apt-get update && apt-get install --no-install-recommends -y docker-ce-cli
 
-COPY aws-nitro-enclaves-cli/build/nitro_cli/x86_64-unknown-linux-musl/release/nitro-cli /usr/bin/
+COPY aws-nitro-enclaves-cli/build/nitro_cli/${ARCH}-unknown-linux-musl/release/nitro-cli /usr/bin/
 
 RUN pip install -U setuptools && \
     pip install awscli
@@ -47,26 +48,26 @@ WORKDIR /work/
 RUN wget https://github.com/openssl/openssl/archive/OpenSSL_1_1_1f.tar.gz && \
     tar zxvf OpenSSL_1_1_1f.tar.gz &&\
     cd openssl-OpenSSL_1_1_1f && \
-    CC="musl-gcc -fPIE -pie -static -idirafter /usr/include/ -idirafter /usr/include/x86_64-linux-gnu/" ./Configure no-shared no-async --prefix=/work/veracruz-nitro-root-enclave/musl --openssldir=/work/veracruz/nitro-root-enclave/musl/ssl linux-x86_64 -DOPENSSL_NO_SECURE_MEMORY && \
+    CC="musl-gcc -fPIE -pie -static -idirafter /usr/include/ -idirafter /usr/include/${ARCH}-linux-gnu/" ./Configure no-shared no-async --prefix=/work/veracruz-nitro-root-enclave/musl --openssldir=/work/veracruz/nitro-root-enclave/musl/ssl linux-${ARCH} -DOPENSSL_NO_SECURE_MEMORY && \
     make -j 2
 
+ENV AARCH64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR=/work/openssl-OpenSSL_1_1_1f/
 ENV X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR=/work/openssl-OpenSSL_1_1_1f/
-
+ENV AARCH64_UNKNOWN_LINUX_MUSL_OPENSSL_INCLUDE_DIR=/work/openssl-OpenSSL_1_1_1f/include/
 ENV X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_INCLUDE_DIR=/work/openssl-OpenSSL_1_1_1f/include/
-
 
 RUN mkdir -p /var/log/nitro_enclaves/
 RUN touch /var/log/nitro_enclaves/nitro_enclaves.log
 
 RUN mkdir -p /usr/share/nitro_enclaves/blobs/
-COPY aws-nitro-enclaves-cli/blobs/x86_64/* /usr/share/nitro_enclaves/blobs
+COPY aws-nitro-enclaves-cli/blobs/${ARCH}/* /usr/share/nitro_enclaves/blobs
 
 # Define additional metadata for our image.
 VOLUME /var/lib/docker
 # Nitro
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o "awscliv2.zip" \
 	&& unzip awscliv2.zip \
 	&& ./aws/install
 
-RUN rustup target add x86_64-unknown-linux-musl
+RUN rustup target add ${ARCH}-unknown-linux-musl
