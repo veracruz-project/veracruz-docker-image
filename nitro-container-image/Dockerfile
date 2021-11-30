@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 #    jq \
 #    iproute2
 #
-COPY aws-nitro-enclaves-cli/build/nitro_cli/x86_64-unknown-linux-musl/release/nitro-cli /usr/bin/
+COPY nitro-container-image/nitro-cli /usr/bin/
 
 
 COPY nitro-container-image/proxy-attestation-server /work/proxy-attestation-server/proxy-attestation-server
@@ -43,7 +43,7 @@ COPY nitro-container-image/proxy-attestation-server /work/proxy-attestation-serv
 COPY nitro-container-image/veracruz-server /work/veracruz-server/veracruz-server
 COPY nitro-container-image/veracruz-client /work/veracruz-client/veracruz-client
 COPY nitro-container-image/runtime_manager.eif /work/runtime-manager/runtime_manager.eif
-+COPY nitro-container-image/hash /work/veracruz-client/hash
+COPY nitro-container-image/hash /work/veracruz-client/hash
 
 RUN mkdir /work/proxy-config-files /work/veracruz-server-policy
 
