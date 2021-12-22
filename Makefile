@@ -6,7 +6,7 @@ UID ?= $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
 OS_NAME := $(shell uname -s | tr A-Z a-z)
 LOCALIP=$(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*')
-AWS_NITRO_CLI_REVISION = 63f366053a074d3af1f9d40701c2342ed67a14e7
+AWS_NITRO_CLI_REVISION = v1.1.0
 
 ifeq ($(shell uname -m),aarch64)
 ARCH = aarch64
@@ -99,6 +99,7 @@ ifeq (,$(wildcard aws-nitro-enclaves-cli))
 	git clone https://github.com/aws/aws-nitro-enclaves-cli.git
 endif
 	cd "aws-nitro-enclaves-cli" && git checkout $(AWS_NITRO_CLI_REVISION)
+	perl -i -pe 's/readlink -f/realpath/' aws-nitro-enclaves-cli/Makefile
 	make -C aws-nitro-enclaves-cli nitro-cli
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) -f $< .
 
