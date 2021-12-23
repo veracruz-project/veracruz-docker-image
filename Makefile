@@ -99,7 +99,7 @@ ifeq (,$(wildcard aws-nitro-enclaves-cli))
 	git clone https://github.com/aws/aws-nitro-enclaves-cli.git
 endif
 	cd "aws-nitro-enclaves-cli" && git checkout $(AWS_NITRO_CLI_REVISION)
-	perl -i -pe 's/readlink -f/realpath/' aws-nitro-enclaves-cli/Makefile
+	perl -i -pe 's/readlink -f/realpath/' aws-nitro-enclaves-cli/Makefile # Work-around to build on Mac
 	make -C aws-nitro-enclaves-cli nitro-cli
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) -f $< .
 
