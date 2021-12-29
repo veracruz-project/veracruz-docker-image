@@ -1,5 +1,5 @@
 # docker image for CI.
-# It combines TZ and SGX.
+# It currently uses nitro (which is a superset of Linux).
 #
 # AUTHORS
 #
@@ -17,11 +17,6 @@ ARG TEE=ci
 ARG USER=root
 ARG UID=0
 
-# import the tz image
-FROM veracruz/tz:latest as tz
-
-# use sgx as based and copy in the tz artifact
-FROM veracruz/sgx:latest as final
-COPY --from=tz / /
+FROM veracruz/nitro:latest as final
 
 WORKDIR /work

@@ -62,8 +62,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     xxd \
     zlib1g-dev; \
     pip install pycryptodome; \
-    apt-get autoremove -y && apt-get clean; \
-    rm -rf /tmp/* /var/tmp/*
+    apt-get autoremove -y && apt-get clean ; \
+    rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/*
 
 ARG protobuf_version=3.12.4
 ARG protobuf_dir=/usr/local/protobuf
@@ -97,7 +97,8 @@ RUN set -eux; \
     chmod +x rustup-init; \
     ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
     rm rustup-init; \
-    chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
     rustup component add rust-src ; \
     rustup target add wasm32-wasi ; \
-    cargo install diesel_cli --no-default-features --features sqlite ;
+    cargo install diesel_cli --no-default-features --features sqlite ; \
+    chmod -R a+rw ${CARGO_HOME} ${RUSTUP_HOME} ; \
+    find ${RUSTUP_HOME} ${CARGO_HOME} -type d | xargs -n 1000 chmod a+x
