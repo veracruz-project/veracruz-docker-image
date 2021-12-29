@@ -13,8 +13,6 @@
 #       Each RUN contains a bundle of steps, which reduces the cache.
 
 FROM veracruz/base:latest
-ARG USER=root
-ARG UID=0
 ARG ARCH=x86_64
 ENV DEBIAN_FRONTEND noninteractive
 

@@ -4,8 +4,13 @@ VERACRUZ_ROOT ?= ..
 USER ?= $(shell id -un)
 UID ?= $(shell id -u)
 OS_NAME := $(shell uname -s | tr A-Z a-z)
-LOCALIP=$(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*')
 AWS_NITRO_CLI_REVISION = v1.1.0
+
+ifeq ($(OS_NAME),darwin)
+LOCALIP = $(shell "(ifconfig en0 ; ifconfig en1) | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'")
+else
+LOCALIP = $(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*')
+endif
 
 ifeq ($(shell uname -m),aarch64)
 ARCH = aarch64
@@ -78,6 +83,11 @@ ci-base: ci/Dockerfile
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
 
 .PHONY:
+linux-base: linux/Dockerfile base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg -t $(VERACRUZ_DOCKER_IMAGE)_linux -f $< .
+
+.PHONY:
 pull-base:
 	docker pull veracruz/base
+	docker pull veracruz/linux
 	docker pull veracruz/nitro
