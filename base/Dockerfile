@@ -51,7 +51,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     pkg-config \
     procps \
     python \
-    python \
     python-crypto \
     python-pip \
     rsync \
@@ -61,7 +60,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     wget \
     xxd \
     zlib1g-dev; \
-    pip install pycryptodome; \
+    pip install pycryptodome ; \
+    pip cache purge; \
     apt-get autoremove -y && apt-get clean ; \
     rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/*
 
@@ -97,7 +97,6 @@ RUN set -eux; \
     chmod +x rustup-init; \
     ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
     rm rustup-init; \
-    rustup component add rust-src ; \
     rustup target add wasm32-wasi ; \
     cargo install diesel_cli --no-default-features --features sqlite ; \
     chmod -R a+rw ${CARGO_HOME} ${RUSTUP_HOME} ; \
