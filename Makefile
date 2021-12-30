@@ -29,6 +29,7 @@ DOCKER_RUN_PARAMS = \
 .PHONY:
 default:
 
+
 #####################################################################
 # Shared targets
 
@@ -58,9 +59,10 @@ pull-base:
 #
 # Check if the CI image is good enough locally.
 .PHONY:
-ci-run:
-	docker run --rm --privileged -u $(UID) -d \
+ci-run: ci-build
+	docker run --privileged --rm -d \
 		-v /work/cache:/cache \
+		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(abspath $(VERACRUZ_ROOT)):/work/veracruz \
 		--name $(VERACRUZ_CONTAINER)_ci_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_ci:$(USER) sleep inf
@@ -71,7 +73,10 @@ ci-exec:
 
 .PHONY:
 ci-base: ci/Dockerfile nitro-base
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
+		--build-arg USER=root --build-arg UID=0 \
+		--build-arg ICECAP_REV=$(shell GIT_DIR=../icecap/icecap/.git git rev-parse HEAD) \
+		--build-arg TEE=ci -t veracruz/ci -f $< .
 
 
 #####################################################################
@@ -102,6 +107,7 @@ icecap-exec:
 icecap-base: icecap/hacking/Dockerfile base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/icecap -f $< .
 
+
 #####################################################################
 # Linux-related targets
 
@@ -118,6 +124,7 @@ linux-exec:
 .PHONY:
 linux-base: linux/Dockerfile base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/linux -f $< .
+
 
 #####################################################################
 # Nitro-related targets
@@ -155,7 +162,8 @@ nitro-base: nitro/Dockerfile base
 ifeq (,$(wildcard aws-nitro-enclaves-cli))
 	git clone https://github.com/aws/aws-nitro-enclaves-cli.git
 endif
-	cd "aws-nitro-enclaves-cli" && git fetch && git checkout $(AWS_NITRO_CLI_REVISION)
+	cd "aws-nitro-enclaves-cli" && git checkout $(AWS_NITRO_CLI_REVISION) || \
+		(git fetch ; git checkout $(AWS_NITRO_CLI_REVISION))
 	perl -i -pe 's/readlink -f/realpath/' aws-nitro-enclaves-cli/Makefile # Work-around to build on Mac
 	make -C aws-nitro-enclaves-cli nitro-cli
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/nitro -f $< .

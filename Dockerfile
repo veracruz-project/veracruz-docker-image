@@ -39,6 +39,9 @@ RUN \
             groupadd -g ${DOCKER_GROUP_ID} docker ; \
             usermod -a -G docker $USER ; \
         fi ; \
+        if getent group nixbld &>/dev/null ; then \
+            usermod -a -G nixbld $USER ; \
+        fi ; \
     fi
 
 WORKDIR /work/veracruz
