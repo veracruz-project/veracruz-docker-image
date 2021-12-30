@@ -1,5 +1,5 @@
 # docker image for CI.
-# It currently uses nitro (which is a superset of Linux).
+# It currently uses nitro image (which is a superset of linux image).
 #
 # AUTHORS
 #

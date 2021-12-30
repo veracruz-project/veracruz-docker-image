@@ -29,6 +29,33 @@ DOCKER_RUN_PARAMS = \
 .PHONY:
 default:
 
+#####################################################################
+# Shared targets
+
+.PHONY:
+base: base/Dockerfile
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/base -f $< .
+
+.PHONY:
+%-build: Dockerfile %-base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
+		--build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$* \
+		--build-arg DOCKER_GROUP_ID=$(DOCKER_GROUP_ID) \
+		-t $(VERACRUZ_DOCKER_IMAGE)_$*:$(USER) -f $< .
+
+.PHONY:
+all-base: base linux-base nitro-base
+	echo 'All base docker images re-built from scratch'
+
+.PHONY:
+pull-base:
+	docker pull veracruz/base
+	docker pull veracruz/linux
+	docker pull veracruz/nitro
+
+#####################################################################
+# CI-related targets
+#
 # Check if the CI image is good enough locally.
 .PHONY:
 ci-run:
@@ -41,6 +68,59 @@ ci-run:
 .PHONY:
 ci-exec:
 	docker exec -i -t $(VERACRUZ_CONTAINER)_ci_$(USER) /bin/bash
+
+.PHONY:
+ci-base: ci/Dockerfile nitro-base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
+
+
+#####################################################################
+# IceCap-related targets
+
+NIX_ROOT = $(abspath $(VERACRUZ_ROOT)/icecap/docker/hacking/nix-root)
+
+$(NIX_ROOT):
+	mkdir -p -m 0755 $@
+
+$(NIX_ROOT)/.installed: $(NIX_ROOT)
+    docker run --privileged --rm --label $(VERACRUZ_CONTAINER)_icecap_$(USER) \
+		-w /work --mount type=bind,src=$(NIX_ROOT),dst=/nix \
+        $(VERACRUZ_DOCKER_IMAGE)_icecap:$(USER) flock /nix/.installed.lock bash /setup.sh
+
+.PHONY:
+icecap-run: icecap-build $(NIX_ROOT)/.installed
+	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
+		--mount type=bind,src=$(NIX_ROOT),dst=/nix \
+		--name $(VERACRUZ_CONTAINER)_icecap_$(USER) \
+		$(VERACRUZ_DOCKER_IMAGE)_icecap:$(USER) sleep inf
+
+.PHONY:
+icecap-exec:
+	docker exec -i -t $(VERACRUZ_CONTAINER)_icecap_$(USER) /bin/bash
+
+.PHONY:
+icecap-base: icecap/hacking/Dockerfile base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/icecap -f $< .
+
+#####################################################################
+# Linux-related targets
+
+.PHONY:
+linux-run: linux-build
+	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
+		--name $(VERACRUZ_CONTAINER)_linux_$(USER) \
+		$(VERACRUZ_DOCKER_IMAGE)_linux:$(USER) sleep inf
+
+.PHONY:
+linux-exec:
+	docker exec -i -t $(VERACRUZ_CONTAINER)_linux_$(USER) /bin/bash
+
+.PHONY:
+linux-base: linux/Dockerfile base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/linux -f $< .
+
+#####################################################################
+# Nitro-related targets
 
 .PHONY:
 nitro-run: nitro-build
@@ -71,31 +151,6 @@ nitro-exec:
 	docker exec -i -t $(VERACRUZ_CONTAINER)_nitro_$(USER) /bin/bash
 
 .PHONY:
-linux-run: linux-build
-	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
-		--name $(VERACRUZ_CONTAINER)_linux_$(USER) \
-		$(VERACRUZ_DOCKER_IMAGE)_linux:$(USER) sleep inf
-
-.PHONY:
-linux-exec:
-	docker exec -i -t $(VERACRUZ_CONTAINER)_linux_$(USER) /bin/bash
-
-.PHONY:
-%-build: Dockerfile %-base
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
-		--build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$* \
-		--build-arg DOCKER_GROUP_ID=$(DOCKER_GROUP_ID) \
-		-t $(VERACRUZ_DOCKER_IMAGE)_$*:$(USER) -f $< .
-
-.PHONY:
-base: base/Dockerfile
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/base -f $< .
-
-.PHONY:
-linux-base: linux/Dockerfile base
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/linux -f $< .
-
-.PHONY:
 nitro-base: nitro/Dockerfile base
 ifeq (,$(wildcard aws-nitro-enclaves-cli))
 	git clone https://github.com/aws/aws-nitro-enclaves-cli.git
@@ -104,17 +159,3 @@ endif
 	perl -i -pe 's/readlink -f/realpath/' aws-nitro-enclaves-cli/Makefile # Work-around to build on Mac
 	make -C aws-nitro-enclaves-cli nitro-cli
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/nitro -f $< .
-
-.PHONY:
-ci-base: ci/Dockerfile
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg USER=root --build-arg UID=0 --build-arg TEE=ci -t veracruz/ci -f $< .
-
-.PHONY:
-all-base: base linux-base nitro-base
-	echo 'All base docker images re-built from scratch'
-
-.PHONY:
-pull-base:
-	docker pull veracruz/base
-	docker pull veracruz/linux
-	docker pull veracruz/nitro
