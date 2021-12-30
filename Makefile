@@ -5,6 +5,7 @@ USER ?= $(shell id -un)
 UID ?= $(shell id -u)
 OS_NAME := $(shell uname -s | tr A-Z a-z)
 AWS_NITRO_CLI_REVISION = v1.1.0
+NIX_VOLUME = veracruz-icecap-nix-root
 
 ifeq ($(OS_NAME),darwin)
 LOCALIP = $(shell "(ifconfig en0 ; ifconfig en1) | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'")
@@ -57,7 +58,6 @@ pull-base:
 #####################################################################
 # CI-related targets
 #
-# Check if the CI image is good enough locally.
 .PHONY:
 ci-run: ci-build
 	docker run --privileged --rm -d \
@@ -69,7 +69,7 @@ ci-run: ci-build
 
 .PHONY:
 ci-exec:
-	docker exec -i -t $(VERACRUZ_CONTAINER)_ci_$(USER) /bin/bash
+	docker exec -u root -i -t $(VERACRUZ_CONTAINER)_ci_$(USER) /bin/bash || true
 
 .PHONY:
 ci-base: ci/Dockerfile nitro-base
@@ -78,35 +78,60 @@ ci-base: ci/Dockerfile nitro-base
 		--build-arg ICECAP_REV=$(shell GIT_DIR=../icecap/icecap/.git git rev-parse HEAD) \
 		--build-arg TEE=ci -t veracruz/ci -f $< .
 
+# "local" is similar to "ci" but uses "icecap/hacking" with local volume
+# to cache nix store.
+.PHONY:
+localci-run: localci-build icecap-initialize-volume
+	docker run --privileged --rm -d $(DOCKER_RUN_PARAMS) \
+		-v /work/cache:/cache \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		--mount type=volume,src=$(NIX_VOLUME),dst=/nix \
+		--name $(VERACRUZ_CONTAINER)_localci_$(USER) \
+		$(VERACRUZ_DOCKER_IMAGE)_localci:$(USER) sleep inf
+
+.PHONY:
+localci-exec:
+	docker exec -i -t $(VERACRUZ_CONTAINER)_localci_$(USER) /bin/bash || true
+
+.PHONY:
+localci-base: localci/Dockerfile nitro-base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
+		--build-arg TEE=ci -t veracruz/localci -f $< .
+
 
 #####################################################################
 # IceCap-related targets
 
-NIX_ROOT = $(abspath $(VERACRUZ_ROOT)/icecap/docker/hacking/nix-root)
-
-$(NIX_ROOT):
-	mkdir -p -m 0755 $@
-
-$(NIX_ROOT)/.installed: $(NIX_ROOT)
-    docker run --privileged --rm --label $(VERACRUZ_CONTAINER)_icecap_$(USER) \
-		-w /work --mount type=bind,src=$(NIX_ROOT),dst=/nix \
-        $(VERACRUZ_DOCKER_IMAGE)_icecap:$(USER) flock /nix/.installed.lock bash /setup.sh
+.PHONY:
+icecap-initialize-volume: icecap-build
+	if [ -z "$$(docker volume ls -q -f "name=$(NIX_VOLUME)")" ]; then \
+		docker volume create --label $(VERACRUZ_CONTAINER)_icecap_$(USER) \
+			$(NIX_VOLUME) && \
+		docker run --privileged --rm -u root --label $(VERACRUZ_CONTAINER)_icecap_$(USER) \
+			-w /work --mount type=volume,src=$(NIX_VOLUME),dst=/nix \
+			$(VERACRUZ_DOCKER_IMAGE)_icecap:$(USER) flock /nix/.installed.lock bash /work/setup.sh $(USER); \
+	fi
 
 .PHONY:
-icecap-run: icecap-build $(NIX_ROOT)/.installed
+icecap-run: icecap-build icecap-initialize-volume
 	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
-		--mount type=bind,src=$(NIX_ROOT),dst=/nix \
+		--mount type=volume,src=$(NIX_VOLUME),dst=/nix \
 		--name $(VERACRUZ_CONTAINER)_icecap_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_icecap:$(USER) sleep inf
 
 .PHONY:
 icecap-exec:
-	docker exec -i -t $(VERACRUZ_CONTAINER)_icecap_$(USER) /bin/bash
+	docker exec -i -t $(VERACRUZ_CONTAINER)_icecap_$(USER) /bin/bash || true
 
 .PHONY:
 icecap-base: icecap/hacking/Dockerfile base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/icecap -f $< .
 
+.PHONY: icecap-clean
+icecap-clean:
+	for volume in $$(docker volume ls -q -f "name=$(NIX_VOLUME)"); do \
+		docker volume rm $$volume; \
+	done
 
 #####################################################################
 # Linux-related targets
@@ -119,7 +144,7 @@ linux-run: linux-build
 
 .PHONY:
 linux-exec:
-	docker exec -i -t $(VERACRUZ_CONTAINER)_linux_$(USER) /bin/bash
+	docker exec -i -t $(VERACRUZ_CONTAINER)_linux_$(USER) /bin/bash || true
 
 .PHONY:
 linux-base: linux/Dockerfile base
@@ -155,7 +180,7 @@ nitro-run-build: nitro-build
 
 .PHONY:
 nitro-exec:
-	docker exec -i -t $(VERACRUZ_CONTAINER)_nitro_$(USER) /bin/bash
+	docker exec -i -t $(VERACRUZ_CONTAINER)_nitro_$(USER) /bin/bash || true
 
 .PHONY:
 nitro-base: nitro/Dockerfile base

@@ -17,8 +17,10 @@ ENV NIX_BUILD_SHELL bash
 # HACK for persistent git cache.
 ENV XDG_CACHE_HOME=/nix/cache
 
-COPY icecap/install-nix.sh /
-COPY icecap/hacking/setup.sh /
+RUN mkdir /work
+
+COPY icecap/install-nix.sh /work
+COPY icecap/hacking/setup.sh /work
 COPY icecap/hacking/nix.conf /etc/nix/
 
-WORKDIR /work/veracruz
+WORKDIR /work

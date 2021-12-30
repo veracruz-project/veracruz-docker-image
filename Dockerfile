@@ -34,6 +34,7 @@ RUN \
     if [ "$USER" != "root" ] ; then \
         useradd -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; \
         mkdir /home/$USER/.rustup ; \
+        chown $USER /home/$USER/.rustup ; \
         ln -s /usr/local/rustup/toolchains /home/$USER/.rustup/ ; \
         if [ "$DOCKER_GROUP_ID" != "0" ] ; then \
             groupadd -g ${DOCKER_GROUP_ID} docker ; \
@@ -41,6 +42,10 @@ RUN \
         fi ; \
         if getent group nixbld &>/dev/null ; then \
             usermod -a -G nixbld $USER ; \
+        fi ; \
+        if [ -d /nix ] ; then \
+            chown -R $(USER) /nix ; \
+            chmod 0755 /nix ; \
         fi ; \
     fi
 
