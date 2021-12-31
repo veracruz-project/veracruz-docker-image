@@ -18,20 +18,18 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-        python-setuptools \
-        python3-setuptools \
-        python3 \
-        python3-pip \
-        musl-tools \
+        apt-transport-https \
         ca-certificates \
-        curl \
-        lxc \
+        gnupg \
+        iproute2 \
         iptables \
         jq \
-        iproute2 \
-        apt-transport-https \
-        gnupg \
         lsb-release \
+        lxc \
+        musl-tools \
+        python3 \
+        python3-pip \
+        python3-setuptools \
         software-properties-common ; \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - ; \
     add-apt-repository "deb https://download.docker.com/linux/ubuntu bionic stable" ; \

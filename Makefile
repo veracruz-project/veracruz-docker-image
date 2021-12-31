@@ -15,13 +15,7 @@ LOCALIP = $(shell ip -4 address show eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}
 DOCKER_GROUP_ID=$(shell stat --format "%g" $(shell realpath /var/run/docker.sock))
 endif
 
-ifeq ($(shell uname -m),aarch64)
-ARCH = aarch64
-else
-ARCH = x86_64
-endif
-
-BUILD_ARCH = --build-arg ARCH=$(ARCH)
+BUILD_ARCH = --build-arg ARCH=$(shell uname -m)
 
 DOCKER_RUN_PARAMS = \
 		-v $(abspath $(VERACRUZ_ROOT)):/work/veracruz \
