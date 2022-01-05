@@ -28,9 +28,10 @@ ENV XARGO_HOME=/cache/xargo \
 # Use bash as the default
 SHELL ["/bin/bash", "-c"]
 
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    openssl
 # add a user
-    RUN \
-        mkdir -p /work; \
+    RUN mkdir -p /work; mkdir -p /usr/local/rustup; mkdir -p /usr/local/cargo; \
         if [ "$USER" != "root" ] ; then useradd -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; fi; \
         chown -R $USER /work;chown -Rf $USER /usr/local/rustup;chown -Rf $USER /usr/local/cargo
 
