@@ -39,7 +39,7 @@ sgx-exec:
 # This macos is used for run test on trustzone either on MacOS or Linux. Please install XQuartz on MacOS or xhost on Linux. 
 .PHONY:
 tz-run:
-	docker run --rm --privileged -u $(UID) -d -v /work/cache:/cache -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER)_tz_$(USER) $(VERACRUZ_DOCKER_IMAGE)_tz:$(USER) sleep inf
+	docker run --init --rm --privileged -u $(UID) -d -v /work/cache:/cache -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz --name  $(VERACRUZ_CONTAINER)_tz_$(USER) $(VERACRUZ_DOCKER_IMAGE)_tz:$(USER) sleep inf
 
 .PHONY:
 tz-exec:
@@ -60,7 +60,7 @@ ci-exec:
 .PHONY:
 nitro-run: nitro-base
 	# This container must be started on a "Nitro Enclave"-capable AWS instance
-	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ \
+	docker run --init --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ \
 		-v /usr/bin:/host/bin -v /usr/share/nitro_enclaves:/usr/share/nitro_enclaves -v /run/nitro_enclaves:/run/nitro_enclaves \
 		-v /etc/nitro_enclaves:/etc/nitro_enclaves --device=/dev/vsock:/dev/vsock --device=/dev/nitro_enclaves:/dev/nitro_enclaves \
 		-v /var/run/docker.sock:/var/run/docker.sock --env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
@@ -69,7 +69,7 @@ nitro-run: nitro-base
 .PHONY:
 nitro-run-build: nitro-base
 	# This container does not need to be run in AWS it can build but not start enclaves
-	docker run --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ \
+	docker run --init --privileged -d -v $(abspath $(VERACRUZ_ROOT)):/work/veracruz -v $(HOME)/.cargo/registry/:/usr/local/cargo/registry/ \
 	-v /var/run/docker.sock:/var/run/docker.sock --env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
 	--name $(VERACRUZ_CONTAINER)_nitro_$(USER) $(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
 
