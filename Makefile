@@ -54,7 +54,7 @@ pull-base:
 #
 .PHONY:
 ci-run: ci-build
-	docker run --privileged --rm -d \
+	docker run --init --privileged --rm -d \
 		-v /work/cache:/cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(abspath $(VERACRUZ_ROOT)):/work/veracruz \
@@ -76,7 +76,7 @@ ci-base: ci/Dockerfile nitro-base
 # to cache nix store.
 .PHONY:
 localci-run: localci-build icecap-initialize-volume
-	docker run --privileged --rm -d $(DOCKER_RUN_PARAMS) \
+	docker run --init --privileged --rm -d $(DOCKER_RUN_PARAMS) \
 		-v /work/cache:/cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		--mount type=volume,src=$(NIX_VOLUME),dst=/nix \
@@ -108,7 +108,7 @@ icecap-initialize-volume: icecap-build
 
 .PHONY:
 icecap-run: icecap-build icecap-initialize-volume
-	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
+	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		--mount type=volume,src=$(NIX_VOLUME),dst=/nix \
 		--name $(VERACRUZ_CONTAINER)_icecap_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_icecap:$(USER) sleep inf
@@ -132,7 +132,7 @@ icecap-clean:
 
 .PHONY:
 linux-run: linux-build
-	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
+	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		--name $(VERACRUZ_CONTAINER)_linux_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_linux:$(USER) sleep inf
 
