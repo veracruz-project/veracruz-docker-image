@@ -33,7 +33,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     apt-transport-https \
     gnupg \
     lsb-release \
-    software-properties-common
+    software-properties-common \
+    openssl
 
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 RUN add-apt-repository "deb https://download.docker.com/linux/ubuntu bionic stable"
