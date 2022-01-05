@@ -151,7 +151,7 @@ linux-base: linux/Dockerfile base
 .PHONY:
 nitro-run: nitro-build
 	# This container must be started on a "Nitro Enclave"-capable AWS instance
-	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
+	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		-v /usr/bin:/host/bin \
 		-v /usr/share/nitro_enclaves:/usr/share/nitro_enclaves \
 		-v /run/nitro_enclaves:/run/nitro_enclaves \
@@ -166,7 +166,7 @@ nitro-run: nitro-build
 .PHONY:
 nitro-run-build: nitro-build
 	# This container does not need to be run in AWS, it can build but not start enclaves
-	docker run --privileged -d $(DOCKER_RUN_PARAMS) \
+	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		--env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
 		--name $(VERACRUZ_CONTAINER)_nitro_$(USER) \
