@@ -62,12 +62,12 @@ RUN apt-get update && \
         wget \
         xxd \
         zlib1g-dev && \
-    pip install -U setuptools pip && \
-    pip install pycryptodome && \
-    pip cache purge && \
+    python -m pip install --no-cache-dir -U setuptools pip && \
+    python -m pip install --no-cache-dir  pycryptodome && \
     apt-get autoremove -y && apt-get clean && \
     rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/*
 
+    # # TODO: use python3 instead of python
     # update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
     # update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 

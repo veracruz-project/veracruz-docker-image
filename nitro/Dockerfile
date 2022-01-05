@@ -39,9 +39,7 @@ RUN apt-get update && \
 
 COPY aws-nitro-enclaves-cli/build/nitro_cli/${ARCH}-unknown-linux-musl/release/nitro-cli /usr/bin/
 
-RUN pip install -U setuptools pip && \
-    pip install awscli && \
-    pip cache purge
+RUN pip install --no-cache-dir awscli
 
 WORKDIR /work/
 RUN wget https://github.com/openssl/openssl/archive/OpenSSL_1_1_1f.tar.gz && \
