@@ -41,4 +41,8 @@ RUN \
     chgrp -R nixbld /nix ; \
     chmod -R g+rw /nix
 
+RUN add-apt-repository ppa:git-core/ppa && \
+    apt update && \
+    apt install -y git
+
 WORKDIR /work
