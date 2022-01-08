@@ -52,8 +52,10 @@ pull-base:
 #####################################################################
 # CI-related targets
 #
-.PHONY:
-ci-run: ci-build
+.PHONY: ci-unity-run ci-unity-exec ci-unity-base \
+	ci-images ci-icecap ci-linux ci-nitro
+
+ci-unity-run: ci-unity-build
 	docker run --init --privileged --rm -d \
 		-v /work/cache:/cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
@@ -61,18 +63,37 @@ ci-run: ci-build
 		--name $(VERACRUZ_CONTAINER)_ci_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_ci:$(USER) sleep inf
 
-.PHONY:
-ci-exec:
+ci-unity-exec:
 	docker exec -u root -i -t $(VERACRUZ_CONTAINER)_ci_$(USER) /bin/bash || true
 
-.PHONY:
-ci-base: ci/Dockerfile nitro-base
+ci-unity-base: ci/Dockerfile nitro-base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
 		--build-arg USER=root --build-arg UID=0 \
 		--build-arg ICECAP_REV=$(shell GIT_DIR=../icecap/icecap/.git git rev-parse HEAD) \
 		--build-arg TEE=ci -t veracruz/ci -f $< .
 
-# "local" is similar to "ci" but uses "icecap/hacking" with local volume
+ci-images: ci-icecap ci-linux ci-nitro
+	docker tag veracruz/ci-icecap:latest ghcr.io/veracruz-project/veracruz/veracruz-ci-icecap:ci-v2
+	docker tag veracruz/ci-linux:latest  ghcr.io/veracruz-project/veracruz/veracruz-ci-linux:ci-v2
+	docker tag veracruz/ci-nitro:latest  ghcr.io/veracruz-project/veracruz/veracruz-ci-nitro:ci-v2
+
+ci-icecap: ci/icecap/Dockerfile base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
+		--build-arg USER=root --build-arg UID=0 \
+		--build-arg ICECAP_REV=$(shell GIT_DIR=../icecap/icecap/.git git rev-parse HEAD) \
+		--build-arg TEE=ci -t veracruz/ci-icecap -f $< .
+
+ci-linux: ci/linux/Dockerfile base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
+		--build-arg USER=root --build-arg UID=0 \
+		--build-arg TEE=ci -t veracruz/ci-linux -f $< .
+
+ci-nitro: ci/nitro/Dockerfile nitro-base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
+		--build-arg USER=root --build-arg UID=0 \
+		--build-arg TEE=ci -t veracruz/ci-nitro -f $< .
+
+# "localci" is similar to "ci-unity" but uses "icecap/hacking" with local volume
 # to cache nix store.
 .PHONY:
 localci-run: localci-build icecap-initialize-volume
