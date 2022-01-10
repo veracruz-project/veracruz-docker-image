@@ -16,32 +16,38 @@ ARG TEE
 FROM veracruz/${TEE}:latest
 ARG USER=root
 ARG UID=0
+ARG DOCKER_GROUP_ID=0
 ENV DEBIAN_FRONTEND noninteractive
 
 # If you want to use a local cache, you should bind in a local cache directory to /cache
 ENV XARGO_HOME=/cache/xargo \
     SCCACHE_DIR=/cache/sccache \
     SCCACHE_CACHE_SIZE=10G \
-    PATH=/cache/cargo/bin:$PATH \
-    RUST_VERSION=1.48.0
+    PATH=/cache/cargo/bin:$PATH
 
 # Use bash as the default
 SHELL ["/bin/bash", "-c"]
 
 # add a user
-    RUN \
-        mkdir -p /work; \
-        if [ "$USER" != "root" ] ; then useradd -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; fi; \
-        chown -R $USER /work;chown -Rf $USER /usr/local/rustup;chown -Rf $USER /usr/local/cargo
+RUN \
+    mkdir -p /work; \
+    if [ "$USER" != "root" ] ; then \
+        useradd -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; \
+        mkdir /home/$USER/.rustup ; \
+        chown $USER /home/$USER/.rustup ; \
+        ln -s /usr/local/rustup/toolchains /home/$USER/.rustup/ ; \
+        if [ "$DOCKER_GROUP_ID" != "0" ] ; then \
+            groupadd -g ${DOCKER_GROUP_ID} docker ; \
+            usermod -a -G docker $USER ; \
+        fi ; \
+        if getent group nixbld &>/dev/null ; then \
+            usermod -a -G nixbld $USER ; \
+        fi ; \
+        if [ -d /nix ] ; then \
+            chown -R $(USER) /nix ; \
+            chmod 0755 /nix ; \
+        fi ; \
+    fi
 
-# Link the user's toolchain to the global toolchain directory
-USER $USER
-RUN if [ "$USER" != "root" ] ; then mkdir /home/$USER/.rustup; fi;
-WORKDIR /home/$USER/.rustup/
-RUN ln -s /usr/local/rustup/toolchains
-
-USER root
-WORKDIR /
-RUN chown -R $USER /work
-WORKDIR /work
+WORKDIR /work/veracruz
 USER $USER
