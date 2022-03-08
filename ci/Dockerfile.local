@@ -1,4 +1,4 @@
-# docker image for developing and testing Veracruz on Linux
+# docker image for local CI.
 #
 # AUTHORS
 #
@@ -12,4 +12,6 @@
 # NOTE: We try to follow the guide in https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #       Each RUN contains a bundle of steps, which reduces the cache.
 
-FROM veracruz/base:latest
+FROM veracruz/ci-base:latest as final
+
+WORKDIR /work

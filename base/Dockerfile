@@ -15,72 +15,74 @@
 # NOTE: We try to follow the guide in https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #       Each RUN contains a bundle of steps, which reduces the cache.
 
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 ARG ARCH=x86_64
 ENV DEBIAN_FRONTEND noninteractive
+
 # Use bash as the default
 SHELL ["/bin/bash", "-c"]
 
 # SUPPLY_CHAIN_NOTE: apt-get update means we always get latest, but also doesn't fix versions
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install --no-install-recommends -y \
-        autoconf \
-        automake \
+        bash-completion \
         bc \
-        build-essential \
+        bison \
         ca-certificates \
+        cabal-install \
+        ccache \
         clang \
         cmake \
+        coreutils \
+        cpio \
         curl \
+        device-tree-compiler \
+        doxygen \
+        file \
+        flex \
+        g++ \
+        gcc \
+        gcc-aarch64-linux-gnu \
+        gdb \
+        ghc \
         git \
-        libaio-dev \
-        libbluetooth-dev \
-        libcap-dev \
-        libclang-dev \
-        libcurl4-openssl-dev \
-        libfdt-dev \
-        libglib2.0-dev \
-        libpixman-1-dev \
-        libprotobuf-dev \
+        gnupg \
+        haskell-stack \
+        jq \
+        less \
+        libc6-dev-arm64-cross \
         libsqlite3-dev \
         libssl-dev \
-        libtool \
-        llvm-dev \
-        make \
+        libxml2-utils \
+        netbase \
+        ninja-build \
+        openssh-client \
         pkg-config \
+        protobuf-compiler \
         procps \
-        python \
-        python-crypto \
-        python-pip \
-        python-setuptools \
-        rsync \
+        python3-dev \
+        python3-pip \
+        python3-protobuf \
+        python3-setuptools \
+        qemu-system-arm \
         sqlite3 \
+        strace \
+        sudo \
+        telnet \
+        u-boot-tools \
         unzip \
         uuid-dev \
+        vim \
         wget \
         xxd \
-        zlib1g-dev && \
-    python -m pip install --no-cache-dir -U setuptools pip && \
-    python -m pip install --no-cache-dir  pycryptodome && \
+        zlib1g-dev \
+        && \
     apt-get autoremove -y && apt-get clean && \
-    rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/*
-
-    # # TODO: use python3 instead of python
-    # update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
-    # update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
-
-ARG protobuf_version=3.12.4
-ARG protobuf_dir=/usr/local/protobuf
-ENV PATH "${protobuf_dir}/bin:${PATH}"
-RUN protobuf_url=https://github.com/protocolbuffers/protobuf/releases/download ; \
-    if [ ${ARCH} = aarch64 ] ; then p_arch=aarch_64 ; else p_arch=${ARCH} ; fi ; \
-    protobuf_temp=/tmp/protobuf-${p_arch}.zip ; \
-    curl -o ${protobuf_temp} -L ${protobuf_url}/v${protobuf_version}/protoc-${protobuf_version}-linux-${p_arch}.zip \
-    && unzip ${protobuf_temp} -d ${protobuf_dir} \
-    && rm ${protobuf_temp} \
-    && chmod --recursive a+rwx ${protobuf_dir}
+    rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/* && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -100,8 +102,5 @@ RUN set -eux; \
     chmod +x rustup-init; \
     ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
     rm rustup-init; \
-    rustup target add wasm32-wasi ; \
     cargo install diesel_cli --no-default-features --features sqlite ; \
-    rm -rf /usr/local/cargo/registry/*/github.com-* ; \
-    chmod -R a+rw ${CARGO_HOME} ${RUSTUP_HOME} ; \
-    find ${RUSTUP_HOME} ${CARGO_HOME} -type d | xargs -n 1000 chmod a+x
+    rm -rf /usr/local/cargo/registry/*/github.com-*

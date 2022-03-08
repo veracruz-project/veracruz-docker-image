@@ -21,43 +21,38 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         apt-transport-https \
         ca-certificates \
-        gnupg \
-        iproute2 \
-        iptables \
-        jq \
         lsb-release \
         lxc \
-        musl-tools \
-        python3 \
-        python3-pip \
-        python3-setuptools \
-        software-properties-common ; \
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - ; \
-    add-apt-repository "deb https://download.docker.com/linux/ubuntu bionic stable" ; \
-    apt-get update && apt-get install --no-install-recommends -y docker-ce-cli ; \
-    apt-get autoremove -y && apt-get clean ; \
+        musl-tools && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+        sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    arch=$(dpkg --print-architecture) && \
+    dist=$(lsb_release -cs) && \
+    echo "deb [arch=$arch signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu impish stable" | \
+        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && apt-get install --no-install-recommends -y docker-ce-cli && \
+    apt-get autoremove -y && apt-get clean && \
     rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/*
 
 COPY aws-nitro-enclaves-cli/build/nitro_cli/${ARCH}-unknown-linux-musl/release/nitro-cli /usr/bin/
 
 RUN pip install --no-cache-dir awscli
 
-WORKDIR /work/
-RUN wget https://github.com/openssl/openssl/archive/OpenSSL_1_1_1f.tar.gz && \
-    tar zxvf OpenSSL_1_1_1f.tar.gz &&\
-    cd openssl-OpenSSL_1_1_1f && \
+RUN wget https://github.com/openssl/openssl/archive/refs/tags/openssl-3.0.1.tar.gz && \
+    tar zxvf openssl-3.0.1.tar.gz &&\
+    cd openssl-openssl-3.0.1 && \
     CC="musl-gcc -fPIE -pie -static -idirafter /usr/include/ -idirafter /usr/include/${ARCH}-linux-gnu/" \
         ./Configure no-shared no-async -DOPENSSL_NO_SECURE_MEMORY \
         --prefix=/work/veracruz-nitro-root-enclave/musl \
         --openssldir=/work/veracruz/nitro-root-enclave/musl/ssl linux-${ARCH} && \
-    make -j 2 && \
-    make install && \
+    make -j $(nproc) && \
+    make install_sw install_ssldirs && \
     cd .. && \
-    rm -rf openssl-OpenSSL_1_1_1f
+    rm -rf openssl-openssl-3.0.1 openssl-3.0.1.tar.gz
 
 ENV \
-    AARCH64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR=/work/veracruz-nitro-root-enclave/musl/lib \
-    X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR=/work/veracruz-nitro-root-enclave/musl/lib \
+    AARCH64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR=/work/veracruz-nitro-root-enclave/musl/lib64 \
+    X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_LIB_DIR=/work/veracruz-nitro-root-enclave/musl/lib64 \
     AARCH64_UNKNOWN_LINUX_MUSL_OPENSSL_INCLUDE_DIR=/work/veracruz-nitro-root-enclave/musl/include \
     X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_INCLUDE_DIR=/work/veracruz-nitro-root-enclave/musl/include
 
@@ -75,13 +70,8 @@ RUN NE_GID=${NE_GID} ; \
         groupadd -g ${NE_GID} ne ; \
     fi
 
-# Define additional metadata for our image.
-VOLUME /var/lib/docker
-# Nitro
-
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o "awscliv2.zip" \
 	&& unzip awscliv2.zip \
 	&& ./aws/install \
     && rm -rf awscliv2.zip aws
 
-RUN rustup target add ${ARCH}-unknown-linux-musl

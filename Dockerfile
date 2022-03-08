@@ -19,11 +19,14 @@ ARG UID=0
 ARG DOCKER_GROUP_ID=0
 ENV DEBIAN_FRONTEND noninteractive
 
-# If you want to use a local cache, you should bind in a local cache directory to /cache
-ENV XARGO_HOME=/cache/xargo \
-    SCCACHE_DIR=/cache/sccache \
-    SCCACHE_CACHE_SIZE=10G \
-    PATH=/cache/cargo/bin:$PATH
+ENV SCCACHE_DIR="/local/build/cache/sccache" \
+    SCCACHE_CACHE_SIZE="10G" \
+    RUSTUP_HOME="/local/build/cache/rustup" \
+    CARGO_HOME="/local/build/cache/cargo" \
+    STACK_ROOT="/local/build/cache/stack" \
+    PATH="/local/build/cache/rustup/bin:$PATH"
+
+# ENV RUSTC_WRAPPER=sccache
 
 # Use bash as the default
 SHELL ["/bin/bash", "-c"]
@@ -31,26 +34,18 @@ SHELL ["/bin/bash", "-c"]
 # add a user
 RUN \
     mkdir -p /work; \
+    mkdir -p /local; \
     if [ "$USER" != "root" ] ; then \
         useradd -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; \
-        mkdir /home/$USER/.rustup ; \
-        chown $USER /home/$USER/.rustup ; \
-        ln -s /usr/local/rustup/toolchains /home/$USER/.rustup/ ; \
         if [ "$DOCKER_GROUP_ID" != "0" ] ; then \
             groupadd -g ${DOCKER_GROUP_ID} docker ; \
             usermod -a -G docker $USER ; \
         fi ; \
-        if getent group nixbld &>/dev/null ; then \
-            usermod -a -G nixbld $USER ; \
-        fi ; \
         if getent group ne &>/dev/null ; then \
             usermod -a -G ne $USER ; \
         fi ; \
-        if [ -d /nix ] ; then \
-            chown -R $(USER) /nix ; \
-            chmod 0755 /nix ; \
-        fi ; \
+        echo "$USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USER && chmod 0440 /etc/sudoers.d/$USER ; \
     fi
 
-WORKDIR /work/veracruz
 USER $USER
+WORKDIR /work
