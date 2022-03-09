@@ -6,6 +6,7 @@ UID ?= $(shell id -u)
 OS_NAME := $(shell uname -s | tr A-Z a-z)
 AWS_NITRO_CLI_REVISION = v1.1.0
 NIX_VOLUME = veracruz-icecap-nix-root
+NE_GID := $(shell getent group ne | awk -F: '{printf $$3}')
 
 ifeq ($(OS_NAME),darwin)
 LOCALIP = $(shell "(ifconfig en0 ; ifconfig en1) | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'")
@@ -37,7 +38,7 @@ base: base/Dockerfile
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
 		--build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$* \
 		--build-arg DOCKER_GROUP_ID=$(DOCKER_GROUP_ID) \
-		-t $(VERACRUZ_DOCKER_IMAGE)_$*:$(USER) -f $< .
+		-t $(VERACRUZ_DOCKER_IMAGE)_$*:$(USER) --progress=plain -f $< .
 
 .PHONY:
 all-base: base linux-base nitro-base
@@ -180,7 +181,7 @@ nitro-run: nitro-build
 		--device=/dev/vsock:/dev/vsock \
 		--device=/dev/nitro_enclaves:/dev/nitro_enclaves \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		--env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
+		-p $(LOCALIP):3010:3010/tcp \
 		--name $(VERACRUZ_CONTAINER)_nitro_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
 
@@ -189,7 +190,7 @@ nitro-run-build: nitro-build
 	# This container does not need to be run in AWS, it can build but not start enclaves
 	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		--env TABASCO_IP_ADDRESS=$(LOCALIP) -p $(LOCALIP):3010:3010/tcp \
+		-p $(LOCALIP):3010:3010/tcp \
 		--name $(VERACRUZ_CONTAINER)_nitro_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
 
@@ -206,4 +207,4 @@ endif
 		(git fetch ; git checkout $(AWS_NITRO_CLI_REVISION))
 	perl -i -pe 's/readlink -f/realpath/' aws-nitro-enclaves-cli/Makefile # Work-around to build on Mac
 	make -C aws-nitro-enclaves-cli nitro-cli
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/nitro -f $< .
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) --build-arg NE_GID=$(NE_GID) -t veracruz/nitro -f $< .

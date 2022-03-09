@@ -43,6 +43,9 @@ RUN \
         if getent group nixbld &>/dev/null ; then \
             usermod -a -G nixbld $USER ; \
         fi ; \
+        if getent group ne &>/dev/null ; then \
+            usermod -a -G ne $USER ; \
+        fi ; \
         if [ -d /nix ] ; then \
             chown -R $(USER) /nix ; \
             chmod 0755 /nix ; \

@@ -14,6 +14,7 @@
 
 FROM veracruz/base:latest
 ARG ARCH=x86_64
+ARG NE_GID=""
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
@@ -66,6 +67,12 @@ RUN mkdir -p /var/log/nitro_enclaves ; \
     chmod a+x /var/log/nitro_enclaves ; \
     mkdir -p /usr/share/nitro_enclaves/blobs/
 COPY aws-nitro-enclaves-cli/blobs/${ARCH}/* /usr/share/nitro_enclaves/blobs
+
+RUN NE_GID=${NE_GID} ; \
+    if [ -z "$NE_GID" ] ; then \
+    else \
+        groupadd -g ${NE_GID} ne ; \
+    fi
 
 # Define additional metadata for our image.
 VOLUME /var/lib/docker
