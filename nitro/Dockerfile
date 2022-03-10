@@ -70,6 +70,7 @@ COPY aws-nitro-enclaves-cli/blobs/${ARCH}/* /usr/share/nitro_enclaves/blobs
 
 RUN NE_GID=${NE_GID} ; \
     if [ -z "$NE_GID" ] ; then \
+	echo "No ne group found. Non-root users will be able to build, but not run nitro tests"; \
     else \
         groupadd -g ${NE_GID} ne ; \
     fi
