@@ -21,7 +21,6 @@ DOCKER_RUN_PARAMS = \
 		-v $(abspath $(VERACRUZ_ROOT)):/work/veracruz \
 		--mount type=bind,src=$(abspath $(VERACRUZ_ROOT)),dst=/local
 
-.PHONY:
 default:
 
 #####################################################################
@@ -31,18 +30,18 @@ default:
 base: base/Dockerfile
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/base -f $< .
 
-.PHONY:
+.PHONY: %-build
 %-build: Dockerfile %-base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) \
 		--build-arg USER=$(USER) --build-arg UID=$(UID) --build-arg TEE=$* \
 		--build-arg DOCKER_GROUP_ID=$(DOCKER_GROUP_ID) \
 		-t $(VERACRUZ_DOCKER_IMAGE)_$*:$(USER) --progress=plain -f $< .
 
-.PHONY:
+.PHONY: all-base
 all-base: base linux-base nitro-base icecap-base
 	echo 'All base docker images re-built from scratch'
 
-.PHONY:
+.PHONY: pull-base
 pull-base:
 	docker pull veracruz/base
 	docker pull veracruz/linux
@@ -52,14 +51,16 @@ pull-base:
 #####################################################################
 # CI-related targets
 #
-.PHONY: ci-unity-run ci-unity-exec ci-unity-base \
-	ci-images ci-icecap ci-linux ci-nitro
+.PHONY: ci-base ci-run ci-exec ci-image ci-image-tag \
+	localci-run localci-exec localci-base
+
+ci-base: ci/Dockerfile.base nitro-base
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/ci-base -f $< .
 
 ci-run: ci-image
 	# Make sure the cargo registry directory exists to avoid permission issues
 	mkdir -p $(HOME)/.cargo/registry
 	docker run --init --privileged --rm -d \
-		-v /work/cache:/cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(abspath $(VERACRUZ_ROOT)):/work/veracruz \
 		--name $(VERACRUZ_CONTAINER)_ci_$(USER) \
@@ -74,28 +75,21 @@ ci-image: ci/Dockerfile.cache ci-base
 ci-image-tag:
 	docker tag veracruz/ci:latest ghcr.io/veracruz-project/veracruz/veracruz-ci:ci-v2
 
-# "localci" is similar to "ci-unity" but uses "icecap/hacking" with local volume
-# to cache nix store.
-.PHONY:
+# "localci" is similar to "ci" but does not run as root to avoid problems
+# with file permissions.
 localci-run: localci-build
 	# Make sure the cargo registry directory exists to avoid permission issues
 	mkdir -p $(HOME)/.cargo/registry
 	docker run --init --privileged --rm -d $(DOCKER_RUN_PARAMS) \
-		-v /work/cache:/cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		--name $(VERACRUZ_CONTAINER)_localci_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_localci:$(USER) sleep inf
 
-.PHONY:
 localci-exec:
 	docker exec -i -t $(VERACRUZ_CONTAINER)_localci_$(USER) /bin/bash || true
 
-.PHONY:
 localci-base: ci/Dockerfile.local ci-base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/localci -f $< .
-
-ci-base: ci/Dockerfile.base nitro-base
-	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/ci-base -f $< .
 
 #####################################################################
 # IceCap-related targets
@@ -135,11 +129,13 @@ linux-exec:
 linux-base: linux/Dockerfile base
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARCH) -t veracruz/linux -f $< .
 
-
 #####################################################################
 # Nitro-related targets
 
-.PHONY:
+.PHONY: nitro-run nitro-run-build nitro-exec nitro-base
+
+# "nitro-run" should be run on a AWS Nitro Enclave instance, "nitro-run-build"
+# allows to build Veracruz with Nitro support on other machines.
 nitro-run: nitro-build
 	# Make sure the cargo registry directory exists to avoid permission issues
 	mkdir -p $(HOME)/.cargo/registry
@@ -156,7 +152,6 @@ nitro-run: nitro-build
 		--name $(VERACRUZ_CONTAINER)_nitro_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
 
-.PHONY:
 nitro-run-build: nitro-build
 	# Make sure the cargo registry directory exists to avoid permission issues
 	mkdir -p $(HOME)/.cargo/registry
@@ -167,12 +162,10 @@ nitro-run-build: nitro-build
 		--name $(VERACRUZ_CONTAINER)_nitro_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_nitro:$(USER) sleep inf
 
-.PHONY:
 nitro-exec:
 	docker exec -i -t $(VERACRUZ_CONTAINER)_nitro_$(USER) /bin/bash || true
 
-.PHONY:
-nitro-base: nitro/Dockerfile # base
+nitro-base: nitro/Dockerfile base
 ifeq (,$(wildcard aws-nitro-enclaves-cli))
 	git clone https://github.com/aws/aws-nitro-enclaves-cli.git
 endif
