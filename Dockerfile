@@ -11,9 +11,11 @@
 #
 # NOTE: We try to follow the guide in https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #       Each RUN contains a bundle of steps, which reduces the cache.
-ARG TEE
 
-FROM veracruz/${TEE}:latest
+ARG TEE
+ARG VERSION="latest"
+
+FROM veracruz/${TEE}:${VERSION}
 ARG USER=root
 ARG UID=0
 ARG DOCKER_GROUP_ID=0

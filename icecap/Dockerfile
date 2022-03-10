@@ -12,10 +12,13 @@
 # NOTE: We try to follow the guide in https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #       Each RUN contains a bundle of steps, which reduces the cache.
 
+ARG VERSION="latest"
+
+FROM veracruz/base:${VERSION} as final
+
+ARG ARCH=x86_64
 ARG USER=root
 ARG UID=0
-
-FROM veracruz/base:latest as final
 
 # Install repo
 RUN \

@@ -12,6 +12,8 @@
 # NOTE: We try to follow the guide in https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #       Each RUN contains a bundle of steps, which reduces the cache.
 
-FROM veracruz/ci-base:latest as final
+ARG VERSION="latest"
+
+FROM veracruz/ci-base:${VERSION} as final
 
 WORKDIR /work

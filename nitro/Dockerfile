@@ -12,10 +12,13 @@
 # NOTE: We try to follow the guide in https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #       Each RUN contains a bundle of steps, which reduces the cache.
 
-FROM veracruz/base:latest
+ARG VERSION="latest"
+
+FROM veracruz/base:${VERSION}
+ENV DEBIAN_FRONTEND noninteractive
+
 ARG ARCH=x86_64
 ARG NE_GID=""
-ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -65,7 +68,7 @@ COPY aws-nitro-enclaves-cli/blobs/${ARCH}/* /usr/share/nitro_enclaves/blobs
 
 RUN NE_GID=${NE_GID} ; \
     if [ -z "$NE_GID" ] ; then \
-	echo "No ne group found. Non-root users will be able to build, but not run nitro tests"; \
+        echo "No ne group found. Non-root users will be able to build, but not run nitro tests" ; \
     else \
         groupadd -g ${NE_GID} ne ; \
     fi
