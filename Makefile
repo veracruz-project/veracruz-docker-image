@@ -98,6 +98,8 @@ ci-nitro: ci/nitro/Dockerfile nitro-base
 # to cache nix store.
 .PHONY:
 localci-run: localci-build icecap-initialize-volume
+	# Make sure the cargo registry directory exists to avoid permission issues
+	mkdir -p $(HOME)/.cargo/registry
 	docker run --init --privileged --rm -d $(DOCKER_RUN_PARAMS) \
 		-v /work/cache:/cache \
 		-v /var/run/docker.sock:/var/run/docker.sock \
@@ -130,6 +132,8 @@ icecap-initialize-volume: icecap-build
 
 .PHONY:
 icecap-run: icecap-build icecap-initialize-volume
+	# Make sure the cargo registry directory exists to avoid permission issues
+	mkdir -p $(HOME)/.cargo/registry
 	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		--mount type=volume,src=$(NIX_VOLUME),dst=/nix \
 		--name $(VERACRUZ_CONTAINER)_icecap_$(USER) \
@@ -154,6 +158,8 @@ icecap-clean:
 
 .PHONY:
 linux-run: linux-build
+	# Make sure the cargo registry directory exists to avoid permission issues
+	mkdir -p $(HOME)/.cargo/registry
 	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		--name $(VERACRUZ_CONTAINER)_linux_$(USER) \
 		$(VERACRUZ_DOCKER_IMAGE)_linux:$(USER) sleep inf
@@ -172,6 +178,8 @@ linux-base: linux/Dockerfile base
 
 .PHONY:
 nitro-run: nitro-build
+	# Make sure the cargo registry directory exists to avoid permission issues
+	mkdir -p $(HOME)/.cargo/registry
 	# This container must be started on a "Nitro Enclave"-capable AWS instance
 	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		-v /usr/bin:/host/bin \
@@ -187,6 +195,8 @@ nitro-run: nitro-build
 
 .PHONY:
 nitro-run-build: nitro-build
+	# Make sure the cargo registry directory exists to avoid permission issues
+	mkdir -p $(HOME)/.cargo/registry
 	# This container does not need to be run in AWS, it can build but not start enclaves
 	docker run --init --privileged -d $(DOCKER_RUN_PARAMS) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
