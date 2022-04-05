@@ -49,6 +49,7 @@ RUN apt-get update && \
         libtool \
         llvm-dev \
         make \
+        ninja-build \
         pkg-config \
         procps \
         python \
@@ -105,3 +106,7 @@ RUN set -eux; \
     rm -rf /usr/local/cargo/registry/*/github.com-* ; \
     chmod -R a+rw ${CARGO_HOME} ${RUSTUP_HOME} ; \
     find ${RUSTUP_HOME} ${CARGO_HOME} -type d | xargs -n 1000 chmod a+x
+
+RUN git clone --recursive --depth 1 --branch 1.0.27 https://github.com/WebAssembly/wabt /tmp/wabt \
+    && make -C /tmp/wabt install \
+    && rm -rf /tmp/wabt
