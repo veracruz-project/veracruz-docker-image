@@ -76,6 +76,7 @@ RUN apt-get update && \
         unzip \
         uuid-dev \
         vim \
+        wabt \
         wget \
         xxd \
         zlib1g-dev \
