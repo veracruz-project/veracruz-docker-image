@@ -38,7 +38,7 @@ RUN \
     mkdir -p /work; \
     mkdir -p /local; \
     if [ "$USER" != "root" ] ; then \
-        useradd -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; \
+        useradd -l -u $UID -m -p `openssl rand -base64 32` -s /bin/bash $USER ; \
         if [ "$DOCKER_GROUP_ID" != "0" ] ; then \
             groupadd -g ${DOCKER_GROUP_ID} docker ; \
             usermod -a -G docker $USER ; \
