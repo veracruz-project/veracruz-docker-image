@@ -1,4 +1,4 @@
-# docker image for developing and testing Veracruz on Linux
+# docker image for local CI.
 #
 # AUTHORS
 #
@@ -14,4 +14,6 @@
 
 ARG VERSION="latest"
 
-FROM veracruz/base:${VERSION}
+FROM veracruz/ci-base:${VERSION} as final
+
+WORKDIR /work
