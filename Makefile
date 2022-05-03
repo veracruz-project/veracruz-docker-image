@@ -1,6 +1,6 @@
 VERACRUZ_DOCKER_IMAGE ?= veracruz_image
 VERACRUZ_CONTAINER ?= veracruz
-VERACRUZ_ROOT ?= ..
+VERACRUZ_ROOT ?= ../veracruz
 USER ?= $(shell id -un)
 UID ?= $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
@@ -52,12 +52,12 @@ ci-exec:
 
 
 .PHONY:
-nitro-container-image/created: nitro-container-image/Dockerfile ../proxy-attestation-server/target/debug/proxy-attestation-server ../veracruz-server/target/debug/veracruz-server ../veracruz-client/target/debug/veracruz-client ../runtime-manager/runtime_manager.eif ../test-collateral/proxy-attestation-server.db ../runtime-manager/PCR0
+nitro-container-image/created: nitro-container-image/Dockerfile $(VERACRUZ_ROOT)/proxy-attestation-server/target/debug/proxy-attestation-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-client $(VERACRUZ_ROOT)/workspaces/nitro-runtime/runtime_manager.eif $(VERACRUZ_ROOT)/workspaces/nitro-host/proxy-attestation-server.db $(VERACRUZ_ROOT)/workspaces/nitro-runtime/PCR0
 	CONTAINERID=$(shell docker create veracruz_image_nitro:$(USER)); \
         docker cp $$CONTAINERID:/usr/bin/nitro-cli nitro-container-image; \
         docker rm $$CONTAINERID
-	cp -u ../proxy-attestation-server/target/debug/proxy-attestation-server ../veracruz-server/target/debug/veracruz-server ../veracruz-client/target/debug/veracruz-client ../runtime-manager/runtime_manager.eif ../test-collateral/proxy-attestation-server.db nitro-container-image 
-	cut -c 1-64 < ../runtime-manager/PCR0 > nitro-container-image/hash
+	cp -u $(VERACRUZ_ROOT)/proxy-attestation-server/target/debug/proxy-attestation-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-client $(VERACRUZ_ROOT)/workspaces/nitro-runtime/runtime_manager.eif $(VERACRUZ_ROOT)/workspaces/nitro-host/proxy-attestation-server.db nitro-container-image
+	cut -c 1-64 < $(VERACRUZ_ROOT)/workspaces/nitro-runtime/PCR0 > nitro-container-image/hash
 	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t veracruz_container_nitro:$(USER)  -f $< .
 	touch nitro-container-image/created
 
@@ -73,10 +73,10 @@ nitro-container-image-exec:
 	docker exec -u root -i -t veracruz_container_nitro_$(USER) /bin/bash
 
 .PHONY:
-nitro-container-image-run-server: nitro-container-image ../test-collateral/dual_policy.json
+nitro-container-image-run-server: nitro-container-image $(VERACRUZ_ROOT)/test-collateral/dual_policy.json
 	sed -e 's/^\(.*proxy_attestation_server_url.*\)127.0.0.1\(.*\)$$/\1veracruz_container_nitro_proxy_$(USER)\2/' \
 		-e 's/^\(.*veracruz_server_url.*\)127.0.0.1\(.*\)$$/\1veracruz_container_nitro_server_$(USER)\2/' \
-		../test-collateral/dual_policy.json > dual_policy.json
+		$(VERACRUZ_ROOT)/test-collateral/dual_policy.json > dual_policy.json
 	docker run --rm -d \
 		-v ${PWD}/dual_policy.json:/work/veracruz-server-policy/dual_policy.json \
 		-v /run/nitro_enclaves:/run/nitro_enclaves \
@@ -94,10 +94,10 @@ nitro-container-image-run-server-exec:
 	docker exec -u root -i -t veracruz_container_nitro_server_$(USER) /bin/bash
 
 .PHONY:
-nitro-container-image-run-proxy: nitro-container-image ../test-collateral/CACert.pem ..//test-collateral/CAKey.pem
+nitro-container-image-run-proxy: nitro-container-image $(VERACRUZ_ROOT)/test-collateral/CACert.pem $(VERACRUZ_ROOT)//test-collateral/CAKey.pem
 	docker run --rm -d \
-		-v ${PWD}/../test-collateral/CAKey.pem:/work/proxy-config-files/CAKey.pem \
-		-v ${PWD}/../test-collateral/CACert.pem:/work/proxy-config-files/CACert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/CAKey.pem:/work/proxy-config-files/CAKey.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/CACert.pem:/work/proxy-config-files/CACert.pem \
 		--name veracruz_container_nitro_proxy_$(USER) \
 		--hostname veracruz_container_nitro_proxy_$(USER)\
 		veracruz_container_nitro:$(USER) \
@@ -108,34 +108,34 @@ nitro-container-image-run-proxy-exec:
 	docker exec -u root -i -t veracruz_container_nitro_proxy_$(USER) /bin/bash
 
 .PHONY:
-nitro-container-image-run-client: nitro-container-image ../test-collateral/dual_policy.json ../test-collateral/client_rsa_key.pem ../test-collateral/client_rsa_cert.pem ../test-collateral/data_client_key.pem ../test-collateral/data_client_cert.pem ../test-collateral/expired_key.pem ../test-collateral/expired_cert.pem ../test-collateral/never_used_key.pem ../test-collateral/never_used_cert.pem ../test-collateral/program_client_key.pem ../test-collateral/program_client_cert.pem ../test-collateral/result_client_key.pem ../test-collateral/result_client_cert.pem ../test-collateral/server_rsa_key.pem ../test-collateral/server_rsa_cert.pem ../test-collateral/linear-regression.wasm ../test-collateral/linear-regression.dat
+nitro-container-image-run-client: nitro-container-image $(VERACRUZ_ROOT)/test-collateral/dual_policy.json $(VERACRUZ_ROOT)/test-collateral/client_rsa_key.pem $(VERACRUZ_ROOT)/test-collateral/client_rsa_cert.pem $(VERACRUZ_ROOT)/test-collateral/data_client_key.pem $(VERACRUZ_ROOT)/test-collateral/data_client_cert.pem $(VERACRUZ_ROOT)/test-collateral/expired_key.pem $(VERACRUZ_ROOT)/test-collateral/expired_cert.pem $(VERACRUZ_ROOT)/test-collateral/never_used_key.pem $(VERACRUZ_ROOT)/test-collateral/never_used_cert.pem $(VERACRUZ_ROOT)/test-collateral/program_client_key.pem $(VERACRUZ_ROOT)/test-collateral/program_client_cert.pem $(VERACRUZ_ROOT)/test-collateral/result_client_key.pem $(VERACRUZ_ROOT)/test-collateral/result_client_cert.pem $(VERACRUZ_ROOT)/test-collateral/server_rsa_key.pem $(VERACRUZ_ROOT)/test-collateral/server_rsa_cert.pem $(VERACRUZ_ROOT)/test-collateral/linear-regression.wasm $(VERACRUZ_ROOT)/test-collateral/linear-regression.dat
 	sed -e 's/^\(.*proxy_attestation_server_url.*\)127.0.0.1\(.*\)$$/\1veracruz_container_nitro_proxy_$(USER)\2/' \
 		-e 's/^\(.*veracruz_server_url.*\)127.0.0.1\(.*\)$$/\1veracruz_container_nitro_server_$(USER)\2/' \
-		../test-collateral/dual_policy.json > dual_policy.json
+		$(VERACRUZ_ROOT)/test-collateral/dual_policy.json > dual_policy.json
 	echo "#!/bin/bash\n" \
-		"../veracruz-client/veracruz-client dual_policy.json -p linear-regression.wasm  --identity program_client_cert.pem --key program_client_key.pem\n" \
-		"../veracruz-client/veracruz-client dual_policy.json --data input-0=linear-regression.dat --identity data_client_cert.pem --key data_client_key.pem\n" \
-   		"../veracruz-client/veracruz-client dual_policy.json --results linear-regression.wasm=output --identity data_client_cert.pem --key data_client_key.pem\n" > execute-veracruz-client.sh
+		"$(VERACRUZ_ROOT)/veracruz-client/veracruz-client dual_policy.json -p linear-regression.wasm  --identity program_client_cert.pem --key program_client_key.pem\n" \
+		"$(VERACRUZ_ROOT)/veracruz-client/veracruz-client dual_policy.json --data input-0=linear-regression.dat --identity data_client_cert.pem --key data_client_key.pem\n" \
+		"$(VERACRUZ_ROOT)/veracruz-client/veracruz-client dual_policy.json --results linear-regression.wasm=output --identity data_client_cert.pem --key data_client_key.pem\n" > execute-veracruz-client.sh
 	chmod u+x execute-veracruz-client.sh
 	docker run --rm -d \
 		-v ${PWD}/execute-veracruz-client.sh:/work/veracruz-server-policy/execute-veracruz-client.sh \
 		-v ${PWD}/dual_policy.json:/work/veracruz-server-policy/dual_policy.json \
-		-v ${PWD}/../test-collateral/client_rsa_key.pem:/work/veracruz-server-policy/client_rsa_key.pem \
-		-v ${PWD}/../test-collateral/data_client_key.pem:/work/veracruz-server-policy/data_client_key.pem \
-		-v ${PWD}/../test-collateral/expired_key.pem:/work/veracruz-server-policy/expired_key.pem \
-		-v ${PWD}/../test-collateral/never_used_key.pem:/work/veracruz-server-policy/never_used_key.pem \
-		-v ${PWD}/../test-collateral/program_client_key.pem:/work/veracruz-server-policy/program_client_key.pem \
-		-v ${PWD}/../test-collateral/result_client_key.pem:/work/veracruz-server-policy/result_client_key.pem \
-		-v ${PWD}/../test-collateral/server_rsa_key.pem:/work/veracruz-server-policy/server_rsa_key.pem \
-		-v ${PWD}/../test-collateral/client_rsa_cert.pem:/work/veracruz-server-policy/client_rsa_cert.pem \
-		-v ${PWD}/../test-collateral/data_client_cert.pem:/work/veracruz-server-policy/data_client_cert.pem \
-		-v ${PWD}/../test-collateral/expired_cert.pem:/work/veracruz-server-policy/expired_cert.pem \
-		-v ${PWD}/../test-collateral/never_used_cert.pem:/work/veracruz-server-policy/never_used_cert.pem \
-		-v ${PWD}/../test-collateral/program_client_cert.pem:/work/veracruz-server-policy/program_client_cert.pem \
-		-v ${PWD}/../test-collateral/result_client_cert.pem:/work/veracruz-server-policy/result_client_cert.pem \
-		-v ${PWD}/../test-collateral/server_rsa_cert.pem:/work/veracruz-server-policy/server_rsa_cert.pem \
-		-v ${PWD}/../test-collateral/linear-regression.wasm:/work/veracruz-server-policy/linear-regression.wasm \
-		-v ${PWD}/../test-collateral/linear-regression.dat:/work/veracruz-server-policy/linear-regression.dat \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/client_rsa_key.pem:/work/veracruz-server-policy/client_rsa_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/data_client_key.pem:/work/veracruz-server-policy/data_client_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/expired_key.pem:/work/veracruz-server-policy/expired_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/never_used_key.pem:/work/veracruz-server-policy/never_used_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/program_client_key.pem:/work/veracruz-server-policy/program_client_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/result_client_key.pem:/work/veracruz-server-policy/result_client_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/server_rsa_key.pem:/work/veracruz-server-policy/server_rsa_key.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/client_rsa_cert.pem:/work/veracruz-server-policy/client_rsa_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/data_client_cert.pem:/work/veracruz-server-policy/data_client_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/expired_cert.pem:/work/veracruz-server-policy/expired_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/never_used_cert.pem:/work/veracruz-server-policy/never_used_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/program_client_cert.pem:/work/veracruz-server-policy/program_client_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/result_client_cert.pem:/work/veracruz-server-policy/result_client_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/server_rsa_cert.pem:/work/veracruz-server-policy/server_rsa_cert.pem \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/linear-regression.wasm:/work/veracruz-server-policy/linear-regression.wasm \
+		-v ${PWD}/$(VERACRUZ_ROOT)/test-collateral/linear-regression.dat:/work/veracruz-server-policy/linear-regression.dat \
 		--name veracruz_container_nitro_client_$(USER) \
 		--hostname veracruz_container_nitro_client_$(USER)\
 		--add-host="veracruz_container_nitro_server_$(USER):$(shell docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' veracruz_container_nitro_server_$(USER))"  \
