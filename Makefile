@@ -1,6 +1,7 @@
 VERACRUZ_DOCKER_IMAGE ?= veracruz_image
 VERACRUZ_CONTAINER ?= veracruz
 VERACRUZ_ROOT ?= ../veracruz
+VERACRUZ_PROFILE ?= release
 USER ?= $(shell id -un)
 UID ?= $(shell id -u)
 IP := $(firstword $(shell ip addr show | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | awk '{print $1}' ))
@@ -52,11 +53,11 @@ ci-exec:
 
 
 .PHONY:
-nitro-container-image/created: nitro-container-image/Dockerfile $(VERACRUZ_ROOT)/proxy-attestation-server/target/debug/proxy-attestation-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-client $(VERACRUZ_ROOT)/workspaces/nitro-runtime/runtime_manager.eif $(VERACRUZ_ROOT)/workspaces/nitro-host/proxy-attestation-server.db $(VERACRUZ_ROOT)/workspaces/nitro-runtime/PCR0
-	CONTAINERID=$(shell docker create veracruz_image_nitro:$(USER)); \
+nitro-container-image/created: nitro-container-image/Dockerfile $(VERACRUZ_ROOT)/workspaces/nitro-host/target/$(VERACRUZ_PROFILE)/proxy-attestation-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/$(VERACRUZ_PROFILE)/veracruz-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/$(VERACRUZ_PROFILE)/veracruz-client $(VERACRUZ_ROOT)/workspaces/nitro-runtime/runtime_manager.eif $(VERACRUZ_ROOT)/workspaces/nitro-runtime/PCR0
+	CONTAINERID=$(shell docker create ghcr.io/veracruz-project/veracruz/veracruz-nitro); \
         docker cp $$CONTAINERID:/usr/bin/nitro-cli nitro-container-image; \
         docker rm $$CONTAINERID
-	cp -u $(VERACRUZ_ROOT)/proxy-attestation-server/target/debug/proxy-attestation-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/release/veracruz-client $(VERACRUZ_ROOT)/workspaces/nitro-runtime/runtime_manager.eif $(VERACRUZ_ROOT)/workspaces/nitro-host/proxy-attestation-server.db nitro-container-image
+	cp -u $(VERACRUZ_ROOT)/workspaces/nitro-host/target/$(VERACRUZ_PROFILE)/proxy-attestation-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/$(VERACRUZ_PROFILE)/veracruz-server $(VERACRUZ_ROOT)/workspaces/nitro-host/target/$(VERACRUZ_PROFILE)/veracruz-client $(VERACRUZ_ROOT)/workspaces/nitro-runtime/runtime_manager.eif nitro-container-image
 	cut -c 1-64 < $(VERACRUZ_ROOT)/workspaces/nitro-runtime/PCR0 > nitro-container-image/hash
 	DOCKER_BUILDKIT=1 docker build --build-arg USER=root --build-arg UID=0 --build-arg TEE=nitro -t veracruz_container_nitro:$(USER)  -f $< .
 	touch nitro-container-image/created
@@ -101,7 +102,7 @@ nitro-container-image-run-proxy: nitro-container-image $(VERACRUZ_ROOT)/test-col
 		--name veracruz_container_nitro_proxy_$(USER) \
 		--hostname veracruz_container_nitro_proxy_$(USER)\
 		veracruz_container_nitro:$(USER) \
-		/work/proxy-attestation-server/proxy-attestation-server 0.0.0.0:3010 --ca-cert /work/proxy-config-files/CACert.pem --ca-key /work/proxy-config-files/CAKey.pem --database-url /work/proxy-attestation-server/proxy-attestation-server.db
+		/work/proxy-attestation-server/proxy-attestation-server 0.0.0.0:3010 --ca-cert /work/proxy-config-files/CACert.pem --ca-key /work/proxy-config-files/CAKey.pem
 
 .PHONY:
 nitro-container-image-run-proxy-exec: 
