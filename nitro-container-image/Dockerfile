@@ -38,7 +38,6 @@ COPY nitro-container-image/nitro-cli /usr/bin/
 
 
 COPY nitro-container-image/proxy-attestation-server /work/proxy-attestation-server/proxy-attestation-server
-COPY nitro-container-image/proxy-attestation-server.db /work/proxy-attestation-server/proxy-attestation-server.db
 COPY nitro-container-image/proxy-attestation-server /work/proxy-attestation-server/proxy-attestation-server
 COPY nitro-container-image/veracruz-server /work/veracruz-server/veracruz-server
 COPY nitro-container-image/veracruz-client /work/veracruz-client/veracruz-client
